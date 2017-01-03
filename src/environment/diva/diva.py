@@ -1,11 +1,13 @@
 import os
+import numpy as np
+
 from numpy import array, hstack, float32, zeros, linspace, shape, mean, log2, transpose, sum, isnan
 
 from oct2py import Oct2Py, Oct2PyError
-from ..environment import Environment
-from ...utils import bounds_min_max
-from ...models.dmp import DmpPrimitive
-
+from explauto.environment.environment import Environment
+from explauto.utils import bounds_min_max
+from explauto.models.dmp import DmpPrimitive
+from ...dmp.mydmp import MyDMP
 
 if not (os.environ.has_key('AVAKAS') and os.environ['AVAKAS']):
     import pyaudio
@@ -60,9 +62,33 @@ class DivaSynth:
 
 
 class DivaEnvironment(Environment):
-    def __init__(self, **kwargs):
-        for key, value in kwargs.iteritems():
-            setattr(self, key, value)
+    def __init__(self, m_mins, m_maxs, s_mins, s_maxs,
+                m_used,
+                s_used,
+                rest_position_diva,
+                audio,
+                diva_use_initial,
+                diva_use_goal,
+                used_diva,
+                n_dmps_diva,
+                n_bfs_diva,
+                move_steps):
+        
+        self.m_mins = m_mins
+        self.m_maxs = m_maxs 
+        self.s_mins = s_mins
+        self.s_maxs = s_maxs
+        self.m_used = m_used
+        self.s_used = s_used
+        self.rest_position_diva = rest_position_diva
+        self.audio = audio
+        self.diva_use_initial = diva_use_initial
+        self.diva_use_goal = diva_use_goal
+        self.used_diva = used_diva
+        self.n_dmps_diva = n_dmps_diva
+        self.n_bfs_diva = n_bfs_diva
+        self.move_steps = move_steps
+    
         
         if (os.environ.has_key('AVAKAS') and os.environ['AVAKAS']):
             self.audio = False
@@ -77,15 +103,8 @@ class DivaEnvironment(Environment):
         self.synth = DivaSynth()
         self.art = array([0.]*10 + [1]*3)   # 13 articulators is a constant from diva_synth.m in the diva source code
         
-        dmp_default = zeros(self.n_dmps_diva*(self.n_bfs_diva+2))
-        if not self.diva_use_initial:
-            init_position = self.rest_position_diva
-            dmp_default[:self.n_dmps_diva] = init_position
-        if not self.diva_use_goal:
-            end_position = self.rest_position_diva
-            dmp_default[-self.n_dmps_diva:] = end_position
-        
-        self.dmp = DmpPrimitive(self.n_dmps_diva, self.n_bfs_diva, self.used_diva, dmp_default, type='discrete')
+        self.max_params = np.array([300.] * self.n_bfs_diva * self.n_dmps_diva + [1.] * self.n_dmps_diva)
+        self.dmp = MyDMP(n_dmps=self.n_dmps_diva, n_bfs=self.n_bfs_diva, timesteps=self.move_steps, max_params=self.max_params)
         
         self.default_m = zeros(self.n_dmps_diva * self.n_bfs_diva + self.n_dmps_diva * self.diva_use_initial + self.n_dmps_diva * self.diva_use_goal)
         self.default_m_traj = self.compute_motor_command(self.default_m)
@@ -147,34 +166,36 @@ class DivaEnvironment(Environment):
     
     
     def trajectory(self, m):
-        y = self.dmp.trajectory(m)
+        y = self.dmp.trajectory(np.array(m) * self.max_params)
         if len(y) > self.move_steps: 
             ls = linspace(0,len(y)-1,self.move_steps)
             ls = array(ls, dtype='int')
             y = y[ls]
-
+        #print "m diva", m, "traj diva", y
         return y
         
         
     def update(self, mov):
-        s = Environment.update(self, mov, batch=True)
+        s = Environment.update(self, mov)
         
         if self.audio:         
-            sound = self.sound_wave(s)
+            sound = self.sound_wave(self.art_traj)
             self.stream.write(sound.astype(float32).tostring())
-            print "Sound sent"
-            
-        if len(shape(array(s))) == 1:
-            return s
-        else:
-            s = list(mean(array(s), axis=0))
-            #print "Diva s=", s
-            return s
+            #print "Sound sent", sound, len(sound)
+        return s    
+        #return [s_[0] for s_ in s] + [s_[1] for s_ in s] 
+    
+#         if len(shape(array(s))) == 1:
+#             return s
+#         else:
+#             s = list(mean(array(s), axis=0))
+#             #print "Diva s=", s
+#             return s
+#         
         
-        
-    def sound_wave(self, art_traj, power = 4.):
-        synth_art = self.art.reshape(1, -1).repeat(len(art_traj), axis=0)
+    def sound_wave(self, art_traj, power = 2.):
+        synth_art = self.art.reshape(1, -1).repeat(len(art_traj.T), axis=0)
         #print shape(synth_art), self.m_used, art_traj
-        #synth_art[:, self.m_used] = art_traj
+        synth_art[:, :] = art_traj.T
         #print "sound wave", self.synth.sound_wave(synth_art.T)
         return power * self.synth.sound_wave(synth_art.T)
