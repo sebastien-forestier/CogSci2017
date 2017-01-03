@@ -29,7 +29,7 @@ class ArmEnvironment(Environment):
         
         
     def reset(self):
-        #print "reset gripper"
+        #print "reset arm"
         self.logs = []
         
     def compute_motor_command(self, m):
@@ -58,9 +58,9 @@ class ArmEnvironment(Environment):
         x, y = joint_positions(angles, self.lengths, 'std')
         x, y = [np.hstack((0., a)) for a in x, y]
         ax.plot(x, y, 'grey', lw=4, **kwargs_plot)
-        ax.plot(x[0], y[0], 'ok', ms=12, **kwargs_plot)
+        ax.plot(x[0], y[0], 'o', color='grey', ms=12, **kwargs_plot)
         for j in range(len(self.lengths)-1):
-            ax.plot(x[j+1], y[j+1], 'ok', ms=12, **kwargs_plot)
-        ax.plot(x[-1], y[-1], 'or', ms=12, **kwargs_plot)
+            ax.plot(x[j+1], y[j+1], 'o', color='grey', ms=12, **kwargs_plot)
+        ax.plot(x[-1], y[-1], 'o', color='grey', ms=12, **kwargs_plot)
         #ax.axis([-1.6, 2.1, -1., 2.1])        
 

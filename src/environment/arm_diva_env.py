@@ -8,6 +8,16 @@ from explauto.utils import bounds_min_max
 from explauto.environment.environment import Environment
 from explauto.utils.utils import rand_bounds
 
+import brewer2mpl
+bmap = brewer2mpl.get_map('Dark2', 'qualitative', 6)
+colors = bmap.mpl_colors
+  
+colors_config = {
+                 "stick":colors[1],
+                 "gripper":colors[1],
+                 "magnetic":colors[2],
+                 "scratch":colors[4],
+                 }
     
 # ARM CONFIG
 
@@ -58,17 +68,17 @@ class CogSci2017Environment(Environment):
         
         self.timesteps = 50
         
+        self.parent_gives_obj_factor = 0.99
         self.tool_length = 0.5
-        self.handle_tol = 0.3
+        self.handle_tol = 0.5
         self.handle_tol_sq = self.handle_tol * self.handle_tol
         self.handle_noise = 0.
-        self.tool_rest_state = [-0.5, 0., 0.5]
         self.object_tol_hand = 0.2
         self.object_tol_hand_sq = self.object_tol_hand * self.object_tol_hand
         self.object_tol_tool = 0.2
         self.object_tol_tool_sq = self.object_tol_tool * self.object_tol_tool
         
-        self.formant_tol = 0.3
+        self.formant_tol = 0.5
         self.formants = None
         self.vowel = None
         
@@ -79,18 +89,19 @@ class CogSci2017Environment(Environment):
                              s_maxs= [1.] * 70)
         
         
+        self.current_tool = [-0.5, 0., 0.5, 0.]
+        self.current_toy1 = [0.5, 0.5, 0.]
+        self.current_toy2 = [0.7, 0.7, 0.]
+        self.current_toy3 = [0.9, 0.9, 0.]
+        self.current_parent = [1., 1.]
         self.reset()
+        self.compute_tool()
         
         if self.arm.gui:
             self.init_plot()
             
 
     def reset(self):
-        self.current_tool = [0., 0., 0.]
-        self.current_toy1 = [0., 0., 0.]
-        self.current_toy2 = [0., 0., 0.]
-        self.current_toy3 = [0., 0., 0.]
-        self.current_parent = [0., 0.]
         self.current_context = self.get_current_context()            
         self.hand = [0.] * 10
         self.tool = [0.] * 10
@@ -99,43 +110,89 @@ class CogSci2017Environment(Environment):
         self.toy3 = [0.] * 10
         self.sound = [0.] * 10
         
-        self.handle_pos = np.array(self.tool_rest_state[0:2])
-        self.tool_angle = self.tool_rest_state[2]
-        self.compute_tool()
-        self.logs = []
+        self.current_tool[3] = 0.
+        self.current_toy1[2] = 0.
+        self.current_toy2[2] = 0.
+        self.current_toy3[2] = 0.
+        
+        self.logs_tool = []
+        self.logs_toy1 = []
+        self.logs_toy2 = []
+        self.logs_toy3 = []
         
     def get_current_context(self):
         return self.current_tool[:2] + self.current_toy1[:2] + self.current_toy2[:2] + self.current_toy3[:2] + self.current_parent
     
     def compute_tool(self):
-        a = np.pi * self.tool_angle
-        self.tool_end_pos = [self.handle_pos[0] + np.cos(a) * self.tool_length, 
-                        self.handle_pos[1] + np.sin(a) * self.tool_length]
+        a = np.pi * self.current_tool[2]
+        self.tool_end_pos = [self.current_tool[0] + np.cos(a) * self.tool_length, 
+                        self.current_tool[1] + np.sin(a) * self.tool_length]
         
     def compute_motor_command(self, m_ag):
         return bounds_min_max(m_ag, self.conf.m_mins, self.conf.m_maxs)
     
     def motor_babbling(self):
-        return rand_bounds(self.conf.m_bounds)[0]
+        m = rand_bounds(self.conf.m_bounds)[0]
+        if np.random.random() < 0.5:
+            m[:21] = 0.
+        else:
+            m[21:] = 0.
+        print "random m", m
+        return m
+    
+    def is_hand_free(self):
+        return self.current_tool[3] == 0 and (not self.current_toy1[2] == 1) and (not self.current_toy2[2] == 1) and (not self.current_toy3[2] == 1)
+    
+    def is_tool_free(self):
+        return (not self.current_toy1[2] == 2) and (not self.current_toy2[2] == 2) and (not self.current_toy3[2] == 2) 
 
+    def give_label(self, toy, toy_log):
+        for i in range(self.timesteps):
+            onset = i
+            if toy_log[i][0][2] > 0:
+                break
+        
+        if toy == "toy1":
+            return [[0.,0.]] * onset + [sound_o] * (50 - onset)
+        elif toy == "toy2":
+            return [[0.,0.]] * onset + [sound_y] * (50 - onset)
+        elif toy == "toy3":
+            return [[0.,0.]] * onset + [sound_u] * (50 - onset)
+        else:
+            raise NotImplementedError
+        
     def compute_sensori_effect(self, m):
-        arm_traj = self.arm.update(m[:21])
+        m_arm = m[:21]
+        m_diva = m[21:]
+        
+        assert np.linalg.norm(m_arm) * np.linalg.norm(m_diva) == 0.
+        
+        if np.linalg.norm(m_arm) > 0.:
+            cmd = "arm"
+        else:
+            cmd = "diva"
+        
+        arm_traj = self.arm.update(m_arm)
         #print "arm traj", arm_traj
         
-        diva_traj = self.diva.update(m[21:])
-        #print "diva traj", diva_traj
-        
-        vowel = None
-        if (sound_o[0] - self.formant_tol < diva_traj[-1][0] < sound_o[0] + self.formant_tol) and (sound_o[1] - self.formant_tol < diva_traj[-1][1] < sound_o[1] + self.formant_tol):
-            vowel =  "o"
-        if (sound_u[0] - self.formant_tol < diva_traj[-1][0] < sound_u[0] + self.formant_tol) and (sound_u[1] - self.formant_tol < diva_traj[-1][1] < sound_u[1] + self.formant_tol):
-            vowel =  "u"
-        if (sound_e[0] - self.formant_tol < diva_traj[-1][0] < sound_e[0] + self.formant_tol) and (sound_e[1] - self.formant_tol < diva_traj[-1][1] < sound_e[1] + self.formant_tol):
-            vowel =  "e"
-        
+        if cmd == "diva":
+            diva_traj = self.diva.update(m_diva)
+            #print "diva traj", diva_traj
+            
+            if (sound_o[0] - self.formant_tol < diva_traj[-1][0] < sound_o[0] + self.formant_tol) and (sound_o[1] - self.formant_tol < diva_traj[-1][1] < sound_o[1] + self.formant_tol):
+                vowel = "o"
+            elif (sound_u[0] - self.formant_tol < diva_traj[-1][0] < sound_u[0] + self.formant_tol) and (sound_u[1] - self.formant_tol < diva_traj[-1][1] < sound_u[1] + self.formant_tol):
+                vowel = "u"
+            elif (sound_e[0] - self.formant_tol < diva_traj[-1][0] < sound_e[0] + self.formant_tol) and (sound_e[1] - self.formant_tol < diva_traj[-1][1] < sound_e[1] + self.formant_tol):
+                vowel = "e"
+            else:
+                vowel = None
+            print "diva vowel:", vowel
+        else:
+            diva_traj = np.zeros((50,2))
+            vowel = None
         self.vowel = vowel
         self.formants = diva_traj[-1]
-        #print "vowel:", vowel
         
         for i in range(self.timesteps):
             
@@ -143,65 +200,97 @@ class CogSci2017Environment(Environment):
             arm_x, arm_y, arm_angle = arm_traj[i]
             
             # Tool
-            if not self.current_tool[2]:
-                if (arm_x - self.handle_pos[0]) ** 2. + (arm_y - self.handle_pos[1]) ** 2. < self.handle_tol_sq:
-                    self.handle_pos = [arm_x, arm_y]
-                    self.angle = np.mod(arm_angle + self.handle_noise * np.random.randn() + 1, 2) - 1
+            if not self.current_tool[3]:
+                if self.is_hand_free() and ((arm_x - self.current_tool[0]) ** 2. + (arm_y - self.current_tool[1]) ** 2. < self.handle_tol_sq):
+                    self.current_tool[0] = arm_x
+                    self.current_tool[1] = arm_y
+                    self.current_tool[2] = np.mod(arm_angle + self.handle_noise * np.random.randn() + 1, 2) - 1
                     self.compute_tool()
-                    self.current_tool[2] = 1
+                    self.current_tool[3] = 1
             else:
-                self.handle_pos = [arm_x, arm_y]
-                self.angle = np.mod(arm_angle + self.handle_noise * np.random.randn() + 1, 2) - 1
+                self.current_tool[0] = arm_x
+                self.current_tool[1] = arm_y
+                self.current_tool[2] = np.mod(arm_angle + self.handle_noise * np.random.randn() + 1, 2) - 1
                 self.compute_tool()
+            self.logs_tool.append([self.current_tool[:2], 
+                          self.current_tool[2], 
+                          self.tool_end_pos, 
+                          self.current_tool[3]])
             
-            # Toy 1
-            if self.current_toy1[2] == 1 or (self.current_toy1[2] == 0 and ((arm_x - self.current_toy1[0]) ** 2 + (arm_y - self.current_toy1[1]) ** 2 < self.object_tol_hand_sq)):
-                self.current_toy1[0] = arm_x
-                self.current_toy1[1] = arm_y
-                self.current_toy1[2] = 1
-            if self.current_toy1[2] == 2 or (self.current_toy1[2] == 0 and ((self.current_tool[0] - self.current_toy1[0]) ** 2 + (self.current_tool[1] - self.current_toy1[1]) ** 2 < self.object_tol_tool_sq)):
-                self.current_toy1[0] = self.current_tool[0]
-                self.current_toy1[1] = self.current_tool[1]
-                self.current_toy1[2] = 2
             
-            # Toy 2
-            if self.current_toy2[2] == 1 or (self.current_toy2[2] == 0 and ((arm_x - self.current_toy2[0]) ** 2 + (arm_y - self.current_toy2[1]) ** 2 < self.object_tol_hand_sq)):
-                self.current_toy2[0] = arm_x
-                self.current_toy2[1] = arm_y
-                self.current_toy2[2] = 1
-            if self.current_toy2[2] == 2 or (self.current_toy2[2] == 0 and ((self.current_tool[0] - self.current_toy2[0]) ** 2 + (self.current_tool[1] - self.current_toy2[1]) ** 2 < self.object_tol_tool_sq)):
-                self.current_toy2[0] = self.current_tool[0]
-                self.current_toy2[1] = self.current_tool[1]
-                self.current_toy2[2] = 2
+            if cmd == "arm":
+                # Toy 1
+                if self.current_toy1[2] == 1 or (self.is_hand_free() and ((arm_x - self.current_toy1[0]) ** 2 + (arm_y - self.current_toy1[1]) ** 2 < self.object_tol_hand_sq)):
+                    self.current_toy1[0] = arm_x
+                    self.current_toy1[1] = arm_y
+                    self.current_toy1[2] = 1
+                if self.current_toy1[2] == 2 or ((not self.current_toy1[2] == 1) and self.is_tool_free() and ((self.tool_end_pos[0] - self.current_toy1[0]) ** 2 + (self.tool_end_pos[1] - self.current_toy1[1]) ** 2 < self.object_tol_tool_sq)):
+                    self.current_toy1[0] = self.tool_end_pos[0]
+                    self.current_toy1[1] = self.tool_end_pos[1]
+                    self.current_toy1[2] = 2
+                self.logs_toy1.append([self.current_toy1])
+                
+                # Toy 2
+                if self.current_toy2[2] == 1 or (self.is_hand_free() and ((arm_x - self.current_toy2[0]) ** 2 + (arm_y - self.current_toy2[1]) ** 2 < self.object_tol_hand_sq)):
+                    self.current_toy2[0] = arm_x
+                    self.current_toy2[1] = arm_y
+                    self.current_toy2[2] = 1
+                if self.current_toy2[2] == 2 or ((not self.current_toy2[2] == 1) and self.is_tool_free() and ((self.tool_end_pos[0] - self.current_toy2[0]) ** 2 + (self.tool_end_pos[1] - self.current_toy2[1]) ** 2 < self.object_tol_tool_sq)):
+                    self.current_toy2[0] = self.tool_end_pos[0]
+                    self.current_toy2[1] = self.tool_end_pos[1]
+                    self.current_toy2[2] = 2
+                self.logs_toy2.append([self.current_toy2])
+                
+                # Toy 3
+                if self.current_toy3[2] == 1 or (self.is_hand_free() and ((arm_x - self.current_toy3[0]) ** 2 + (arm_y - self.current_toy3[1]) ** 2 < self.object_tol_hand_sq)):
+                    self.current_toy3[0] = arm_x
+                    self.current_toy3[1] = arm_y
+                    self.current_toy3[2] = 1
+                if self.current_toy3[2] == 2 or ((not self.current_toy3[2] == 1) and self.is_tool_free() and ((self.tool_end_pos[0] - self.current_toy3[0]) ** 2 + (self.tool_end_pos[1] - self.current_toy3[1]) ** 2 < self.object_tol_tool_sq)):
+                    self.current_toy3[0] = self.tool_end_pos[0]
+                    self.current_toy3[1] = self.tool_end_pos[1]
+                    self.current_toy3[2] = 2
+                self.logs_toy3.append([self.current_toy3])
+                
+            else:
+                # parent gives object if label is produced
+                if self.vowel == "o":
+                    self.current_toy1[0] = self.current_toy1[0] * self.parent_gives_obj_factor
+                    self.current_toy1[1] = self.current_toy1[1] * self.parent_gives_obj_factor
+                elif self.vowel == "u":
+                    self.current_toy2[0] = self.current_toy2[0] * self.parent_gives_obj_factor
+                    self.current_toy2[1] = self.current_toy2[1] * self.parent_gives_obj_factor
+                elif self.vowel == "e":
+                    self.current_toy3[0] = self.current_toy3[0] * self.parent_gives_obj_factor
+                    self.current_toy3[1] = self.current_toy3[1] * self.parent_gives_obj_factor
             
-            # Toy 3
-            if self.current_toy3[2] == 1 or (self.current_toy3[2] == 0 and ((arm_x - self.current_toy3[0]) ** 2 + (arm_y - self.current_toy3[1]) ** 2 < self.object_tol_hand_sq)):
-                self.current_toy3[0] = arm_x
-                self.current_toy3[1] = arm_y
-                self.current_toy3[2] = 1
-            if self.current_toy3[2] == 2 or (self.current_toy3[2] == 0 and ((self.current_tool[0] - self.current_toy3[0]) ** 2 + (self.current_tool[1] - self.current_toy3[1]) ** 2 < self.object_tol_tool_sq)):
-                self.current_toy3[0] = self.current_tool[0]
-                self.current_toy3[1] = self.current_tool[1]
-                self.current_toy3[2] = 2
-        
+                self.logs_toy1.append([self.current_toy1])
+                self.logs_toy2.append([self.current_toy2])
+                self.logs_toy3.append([self.current_toy3])
         
             if self.arm.gui:
                 self.plot_step(self.ax, i)
                 
-                
-        self.current_tool[2] = 0
-        self.current_toy1[2] = 0
-        self.current_toy2[2] = 0
-        self.current_toy3[2] = 0
+        # parent gives label if object is touched by hand 
+        if self.current_toy1[2] == 1:
+            label = self.give_label("toy1", self.logs_toy1)
+        elif self.current_toy2[2] == 1:
+            label = self.give_label("toy2", self.logs_toy2)
+        elif self.current_toy3[2] == 1:
+            label = self.give_label("toy3", self.logs_toy3)
+        else:
+            label = [[0.,0.]] * 50
+        sound = [f for formants in label[0:-1:10] for f in formants]
+        print "parent sound", label, sound
+        
         
         self.hand = [0.] * 10
         self.tool = [0.] * 10
         self.toy1 = [0.] * 10
         self.toy2 = [0.] * 10
         self.toy3 = [0.] * 10
-        self.sound = [0.] * 10
-        
-        
+        self.sound = sound
+                        
         return self.current_context + self.hand + self.tool + self.toy1 + self.toy2 + self.toy3 + self.sound
     
     
@@ -214,22 +303,49 @@ class CogSci2017Environment(Environment):
         plt.axis([-2, 2,-2, 2])
         plt.draw()
     
+    def plot_tool_step(self, ax, i, **kwargs_plot):
+        handle_pos = self.logs_tool[i][0]
+        end_pos = self.logs_tool[i][2]
+        
+        ax.plot([handle_pos[0], end_pos[0]], [handle_pos[1], end_pos[1]], '-', color=colors_config['stick'], lw=6, **kwargs_plot)
+        ax.plot(handle_pos[0], handle_pos[1], 'o', color = colors_config['gripper'], ms=12, **kwargs_plot)
+        ax.plot(end_pos[0], end_pos[1], 'o', color = colors_config['magnetic'], ms=12, **kwargs_plot)                    
+    
+    def plot_toy1_step(self, ax, i, **kwargs_plot):
+        pos = self.logs_toy1[i][0]
+        rectangle = plt.Rectangle((pos[0] - 0.1, pos[1] - 0.1), 0.2, 0.2, color = colors[3], **kwargs_plot)
+        ax.add_patch(rectangle) 
+    
+    def plot_toy2_step(self, ax, i, **kwargs_plot):
+        pos = self.logs_toy2[i][0]
+        rectangle = plt.Rectangle((pos[0] - 0.1, pos[1] - 0.1), 0.2, 0.2, color = colors[4], **kwargs_plot)
+        ax.add_patch(rectangle) 
+    
+    def plot_toy3_step(self, ax, i, **kwargs_plot):
+        pos = self.logs_toy3[i][0]
+        rectangle = plt.Rectangle((pos[0] - 0.1, pos[1] - 0.1), 0.2, 0.2, color = colors[5], **kwargs_plot)
+        ax.add_patch(rectangle) 
+        
     def plot_step(self, ax, i, **kwargs_plot):
+        #t0 = time.time()
         plt.pause(0.0001)
+        #print "t1", time.time() - t0
         plt.cla()
+        #print "t2", time.time() - t0
         self.arm.plot_step(ax, i, **kwargs_plot)
+        self.plot_tool_step(ax, i, **kwargs_plot)
+        self.plot_toy1_step(ax, i, **kwargs_plot)
+        self.plot_toy2_step(ax, i, **kwargs_plot)
+        self.plot_toy3_step(ax, i, **kwargs_plot)
+        #print "t3", time.time() - t0
         plt.xlim([-2, 2])
         plt.ylim([-2, 2])
-#             plt.xlim([-1.3, 1.3])
-#             plt.ylim([-0.2, 1.6])
-#             plt.xlim([-1.6, 1.6])
-#             plt.ylim([-0.5, 1.6])
-#             plt.gca().set_xticklabels([])
-#             plt.gca().set_yticklabels([])
-#             plt.gca().yaxis.set_major_locator(plt.NullLocator())
-#             plt.gca().yaxis.set_major_locator(plt.NullLocator())
-#             plt.xlabel("")
-#             plt.ylabel("")
+        plt.gca().set_xticklabels([])
+        plt.gca().set_yticklabels([])
+        plt.gca().xaxis.set_major_locator(plt.NullLocator())
+        plt.gca().yaxis.set_major_locator(plt.NullLocator())
+        plt.xlabel("")
+        plt.ylabel("")
         plt.draw()
         plt.show(block=False)
     
