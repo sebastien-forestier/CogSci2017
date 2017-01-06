@@ -7,7 +7,7 @@ from scipy.optimize import fmin_l_bfgs_b
 
 
 class MyDMP(object):
-    def __init__(self, n_dmps=4, n_bfs=6, timesteps=25, max_params=None):
+    def __init__(self, n_dmps=4, n_bfs=6, timesteps=25, use_init=False, max_params=None):
         
         self.n_dmps = n_dmps
         self.n_bfs = n_bfs
@@ -15,7 +15,10 @@ class MyDMP(object):
         self.max_params = max_params
         self.bounds = [(-wmax, wmax) for wmax in self.max_params]
          
-        self.used = np.array([False]*self.n_dmps + [True]*self.n_bfs*self.n_dmps + [True]*self.n_dmps)
+        if use_init:
+            self.used = np.array([True]*self.n_dmps + [True]*self.n_bfs*self.n_dmps + [True]*self.n_dmps)
+        else:
+            self.used = np.array([False]*self.n_dmps + [True]*self.n_bfs*self.n_dmps + [True]*self.n_dmps)
         self.default = np.array([0.] * (self.n_bfs+2) * self.n_dmps)
         self.motor = copy(self.default)
         

@@ -61,7 +61,7 @@ class DMPs_discrete(DMPs):
             last = 0.9
         else:
             first = 0. #relative to runtime [0,1]
-            last = 0.5
+            last = 0.9
             
         des_c = np.linspace(last,first,self.bfs) 
 

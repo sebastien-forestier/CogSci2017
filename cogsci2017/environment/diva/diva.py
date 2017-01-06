@@ -103,8 +103,16 @@ class DivaEnvironment(Environment):
         self.synth = DivaSynth()
         self.art = array([0.]*10 + [1]*3)   # 13 articulators is a constant from diva_synth.m in the diva source code
         
-        self.max_params = np.array([300.] * self.n_bfs_diva * self.n_dmps_diva + [1.] * self.n_dmps_diva)
-        self.dmp = MyDMP(n_dmps=self.n_dmps_diva, n_bfs=self.n_bfs_diva, timesteps=self.move_steps, max_params=self.max_params)
+        self.max_params = []
+        
+        if self.diva_use_initial:
+            self.max_params = self.max_params + [1.] * self.n_dmps_diva
+            self.max_params = self.max_params + [300.] * self.n_bfs_diva * self.n_dmps_diva
+        if self.diva_use_goal:
+            self.max_params = self.max_params + [1.] * self.n_dmps_diva
+        self.max_params = np.array(self.max_params)
+        
+        self.dmp = MyDMP(n_dmps=self.n_dmps_diva, n_bfs=self.n_bfs_diva, timesteps=self.move_steps, use_init=self.diva_use_initial, max_params=self.max_params)
         
         self.default_m = zeros(self.n_dmps_diva * self.n_bfs_diva + self.n_dmps_diva * self.diva_use_initial + self.n_dmps_diva * self.diva_use_goal)
         self.default_m_traj = self.compute_motor_command(self.default_m)
