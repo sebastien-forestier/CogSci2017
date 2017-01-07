@@ -51,7 +51,7 @@ class CogSci2017Environment(Environment):
                         m_mins = np.array([-1, -1, -1, -1, -1, -1, -1]),
                         m_maxs = np.array([1, 1, 1, 1, 1, 1, 1]),
                         s_mins = np.array([ 7.,  9.]),
-                        s_maxs = np.array([ 10. ,  11.5]),
+                        s_maxs = np.array([ 10. ,  12.]),
                         m_used = range(7),
                         s_used = range(1, 3),
                         rest_position_diva = list([0]*7),
@@ -84,6 +84,7 @@ class CogSci2017Environment(Environment):
         self.formant_tol = 0.1
         self.formants = None
         self.vowel = None
+        self.diva_traj = None
         
         Environment.__init__(self, 
                              m_mins= [-1.] * (21+28),
@@ -207,6 +208,7 @@ class CogSci2017Environment(Environment):
         
         if cmd == "diva":
             diva_traj = self.diva.update(m_diva)
+            self.diva_traj = diva_traj
             #print "diva traj", diva_traj
             
             if (self.sound_o[0] - self.formant_tol < diva_traj[-1][0] < self.sound_o[0] + self.formant_tol) and (self.sound_o[1] - self.formant_tol < diva_traj[-1][1] < self.sound_o[1] + self.formant_tol):

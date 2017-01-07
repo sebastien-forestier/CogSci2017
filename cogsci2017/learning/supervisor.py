@@ -22,7 +22,7 @@ class Supervisor(object):
         self.progresses_evolution = {}
         self.interests_evolution = {}
         
-        self.mid_control = ''
+        self.mid_control = None
         
         # Define motor and sensory spaces:
         m_ndims = self.conf.m_ndims # number of motor parameters
@@ -50,21 +50,23 @@ class Supervisor(object):
                              s_sound=self.s_sound, 
                              s_caregiver=self.s_caregiver)
         
-        # Create the 14 learning modules:
-        self.modules['mod1'] = LearningModule("mod1", self.m_arm, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod2'] = LearningModule("mod2", self.m_arm, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod3'] = LearningModule("mod3", self.m_arm, self.c_dims + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod4'] = LearningModule("mod4", self.m_arm, self.c_dims + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod5'] = LearningModule("mod5", self.m_arm, self.c_dims + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod6'] = LearningModule("mod6", self.m_arm, self.c_dims + self.s_sound, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        #self.modules['mod7'] = LearningModule("mod7", self.m_arm, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        # Create the 10 learning modules:
+        #self.modules['mod1'] = LearningModule("mod1", self.m_arm, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod2'] = LearningModule("mod2", self.m_arm, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod3'] = LearningModule("mod3", self.m_arm, self.c_dims + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod4'] = LearningModule("mod4", self.m_arm, self.c_dims + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod5'] = LearningModule("mod5", self.m_arm, self.c_dims + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod6'] = LearningModule("mod6", self.m_arm, self.c_dims + self.s_sound, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
         
-        #self.modules['mod8'] = LearningModule("mod8", self.m_diva, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        #self.modules['mod9'] = LearningModule("mod9", self.m_diva, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod10'] = LearningModule("mod10", self.m_diva, self.c_dims + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod11'] = LearningModule("mod11", self.m_diva, self.c_dims + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod12'] = LearningModule("mod12", self.m_diva, self.c_dims + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod10'] = LearningModule("mod10", self.m_diva, self.c_dims + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod11'] = LearningModule("mod11", self.m_diva, self.c_dims + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod12'] = LearningModule("mod12", self.m_diva, self.c_dims + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
         self.modules['mod13'] = LearningModule("mod13", self.m_diva, self.c_dims + self.s_sound, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        
+        
+        #self.modules['mod7'] = LearningModule("mod7", self.m_arm, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)        
+        #self.modules['mod8'] = LearningModule("mod8", self.m_diva, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        #self.modules['mod9'] = LearningModule("mod9", self.m_diva, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)        
         #self.modules['mod14'] = LearningModule("mod14", self.m_diva, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)  
          
 
@@ -142,9 +144,15 @@ class Supervisor(object):
     def get_m(self, ms): return ms[self.conf.m_dims]
     def get_s(self, ms): return ms[self.conf.s_dims]
     
-    def motor_babbling(self):
+    def motor_babbling(self, arm=False, audio=False):
         self.m = rand_bounds(self.conf.m_bounds)[0]
-        if np.random.random() < 0.5:
+        if arm:
+            r = 1.
+        elif audio:
+            r = 0.
+        else:
+            r = np.random.random()
+        if r < 0.5:
             self.m[:self.arm_n_dims] = 0.
         else:
             self.m[self.arm_n_dims:] = 0.
@@ -204,11 +212,17 @@ class Supervisor(object):
         return interests
         
     def print_stats(self):
-        interests = self.get_normalized_interests()
         print "\n----------------\nAgent Statistics\n----------------\n"
         print "#Iterations:", self.t
+        print
         for mid in self.mids:
-            print "Interest of", mid, ": " if mid in ["mod10", "mod11", "mod12", "mod13", "mod14"] else " : ", " " if int(100. * interests[mid]) < 10 else "", int(100. * interests[mid]), "%    #chosen:", " " if self.chosen_modules.count(mid) < 1000 else "", self.chosen_modules.count(mid)
+            print "# Chosen module", mid, ":", self.chosen_modules.count(mid)
+        print
+        for mid in self.mids:
+            print "Competence progress of", mid, ": " if mid in ["mod10", "mod11", "mod12", "mod13", "mod14"] else " : ", self.modules[mid].interest_model.current_competence_progress
+        print
+        for mid in self.mids:
+            print "Prediction progress of", mid, ": " if mid in ["mod10", "mod11", "mod12", "mod13", "mod14"] else " : ", self.modules[mid].interest_model.current_prediction_progress
         print "#Arm trials", self.count_arm
         print "#Vocal trials", self.count_diva
         print

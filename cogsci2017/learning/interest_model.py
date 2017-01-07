@@ -30,10 +30,15 @@ class MiscRandomInterest(RandomInterest):
         self.dist_max = np.linalg.norm(self.bounds[0,:] - self.bounds[1,:])
         self.k = k
         self.progress_mode = progress_mode
-        self.data_xc = Dataset(len(expl_dims), 1)
+        self.data_xc = Dataset(len(expl_dims), 0)
         self.data_sr = Dataset(len(expl_dims), 0)
+        self.data_sp = Dataset(len(expl_dims), 0)
+        self.current_competence_progress = 0.
+        self.current_prediction_progress = 0.
         self.current_progress = 0.
         self.current_interest = 0.
+        self.alpha = 0.5
+        self.beta = 1. - self.alpha
               
         
     def save(self):
@@ -50,56 +55,52 @@ class MiscRandomInterest(RandomInterest):
     def competence_measure(self, sg, s, dist_max):
         return competence_dist(sg, s, dist_max=dist_max)
     
-    def add_xc(self, x, c):
-        self.data_xc.add_xy(x, [c])
+    def add_xc(self, x):
+        self.data_xc.add_xy(x)
         
     def add_sr(self, x):
         self.data_sr.add_xy(x)
         
-    def update_interest(self, i):
-        self.current_progress += (1. / self.win_size) * (i - self.current_progress)
-        self.current_interest = abs(self.current_progress)
-
-    def update(self, xy, ms, snnp=None, sp=None):
-        c = self.competence_measure(xy[self.expl_dims], ms[self.expl_dims], dist_max=self.dist_max)
-        if self.progress_mode == 'local':
-            interest = self.interest_xc(xy[self.expl_dims], c)
-            self.update_interest(interest)
-        elif self.progress_mode == 'global':
-            pass
+    def add_sp(self, x):
+        self.data_sp.add_xy(x)
         
-        self.add_xc(xy[self.expl_dims], c)
-        self.add_sr(ms[self.expl_dims])
-        return interest
+    def update_interest(self, cp, pp):
+        self.current_competence_progress += (1. / self.win_size) * (cp - self.current_competence_progress)
+        self.current_prediction_progress += (1. / self.win_size) * (pp - self.current_prediction_progress)
+        self.current_progress = self.alpha * self.current_competence_progress + self.beta * self.current_prediction_progress
+        self.current_interest = self.alpha * abs(self.current_competence_progress) + self.beta * abs(self.current_prediction_progress)
+
+    def update(self, xy, ms, sp=None):
+        if sp is not None:
+            c = self.competence_measure(xy[self.expl_dims], ms[self.expl_dims], dist_max=self.dist_max)
+            p = self.competence_measure(sp, ms[self.expl_dims], dist_max=self.dist_max)
+            
+            cp = self.new_competence_progress(xy[self.expl_dims], c)
+            pp = self.new_prediction_progress(ms[self.expl_dims], p)
+            
+            self.update_interest(cp, pp)
+            self.add_xc(xy[self.expl_dims])
+            self.add_sr(ms[self.expl_dims])
+            self.add_sp(sp)
     
     def n_points(self):
         return len(self.data_xc)
-    
-    def competence_global(self, mode='sw'):
-        if self.n_points() > 0:
-            if mode == 'all':
-                return np.mean(self.data_c)
-            elif mode == 'sw':
-                idxs = range(self.n_points())[- self.win_size:]
-                return np.mean([self.data_xc.get_y(idx) for idx in idxs])
-            else:
-                raise NotImplementedError
-        else:
-            return 0.
-        
-    def mean_competence_pt(self, x):
-        if self.n_points() > self.k: 
-            _, idxs = self.data_xc.nn_x(x, k=self.k)
-            return np.mean([self.data_xc.get_y(idx) for idx in idxs])
-        else:
-            return self.competence()
                 
-    def interest_xc(self, x, c):
+    def new_competence_progress(self, x, c):
         if self.n_points() > 0:
             idx_sg_NN = self.data_xc.nn_x(x, k=1)[1][0]
             sr_NN = self.data_sr.get_x(idx_sg_NN)
             c_old = self.competence_measure(x, sr_NN, self.dist_max)
             return c - c_old
+        else:
+            return 0.
+        
+    def new_prediction_progress(self, sr, p):
+        if self.n_points() > 0:
+            idx_sr_NN = self.data_sr.nn_x(sr, k=1)[1][0]
+            sp_NN = self.data_sp.get_x(idx_sr_NN)
+            p_old = self.competence_measure(sr, sp_NN, self.dist_max)
+            return p - p_old
         else:
             return 0.
         
@@ -113,30 +114,11 @@ class MiscRandomInterest(RandomInterest):
             comp_end = np.mean(v[int(float(n)/2.):])
             return np.abs(comp_end - comp_beg)
         else:
-            return self.interest_global()
-            
-    def interest_global(self): 
-        if self.n_points() < 2:
             return 0.
-        else:
-            idxs = range(self.n_points())[- self.win_size:]
-            v = [self.data_xc.get_y(idx) for idx in idxs]
-            n = len(v)
-            comp_beg = np.mean(v[:int(float(n)/2.)])
-            comp_end = np.mean(v[int(float(n)/2.):])
-            return np.abs(comp_end - comp_beg)
-        
-    def competence(self): return self.competence_global()
         
     def progress(self): return self.current_progress
     
-    def interest(self):
-        if self.progress_mode == 'local':
-            return self.current_interest
-        elif self.progress_mode == 'global':
-            return self.interest_global()
-        else:
-            raise NotImplementedError        
+    def interest(self): return self.current_interest      
 
         
 

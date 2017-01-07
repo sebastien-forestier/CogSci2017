@@ -5,7 +5,7 @@ sys.path.append('../')
 from cogsci2017.environment.arm_diva_env import CogSci2017Environment
 from cogsci2017.learning.supervisor import Supervisor
 
-iterations = 1000
+iterations = 10000
 
 environment = CogSci2017Environment(gui=False, audio=False)
 

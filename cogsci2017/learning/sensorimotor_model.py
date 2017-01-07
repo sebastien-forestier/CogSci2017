@@ -27,7 +27,9 @@ class DemonstrableNN(NonParametric):
 
     def infer(self, in_dims, out_dims, x):
         if self.t < max(self.model.imodel.fmodel.k, self.model.imodel.k):
-            raise ExplautoBootstrapError
+            res = rand_bounds(np.array([self.m_mins,
+                                        self.m_maxs]))[0]
+            return res, None
 
         if in_dims == self.m_dims and out_dims == self.s_dims:  # forward
             return array(self.model.predict_effect(tuple(x)))
@@ -35,15 +37,18 @@ class DemonstrableNN(NonParametric):
         elif in_dims == self.s_dims and out_dims == self.m_dims:  # inverse
             if not self.bootstrapped_s:
                 # If only one distinct point has been observed in the sensory space, then we output a random motor command
-                return rand_bounds(np.array([self.m_mins,
+                res = rand_bounds(np.array([self.m_mins,
                                              self.m_maxs]))[0]
+                sp = array(self.model.predict_effect(tuple(res)))
+                return res, sp
             else:
                 self.mean_explore = array(self.model.infer_order(tuple(x)))
                 if self.mode == 'explore':
                     r = self.mean_explore
                     r[self.sigma_expl > 0] = np.random.normal(r[self.sigma_expl > 0], self.sigma_expl[self.sigma_expl > 0])
                     res = bounds_min_max(r, self.m_mins, self.m_maxs)
-                    return res
+                    sp = array(self.model.predict_effect(tuple(res)))
+                    return res, sp
                 else:  # exploit'
                     return array(self.model.infer_order(tuple(x)))
 

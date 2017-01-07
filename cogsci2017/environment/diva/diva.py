@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import time
 
 from numpy import array, hstack, float32, zeros, linspace, shape, mean, log2, transpose, sum, isnan
 
@@ -89,6 +90,9 @@ class DivaEnvironment(Environment):
         self.n_bfs_diva = n_bfs_diva
         self.move_steps = move_steps
     
+        self.f0 = 1.
+        self.pressure = 1.
+        self.voicing = 1.
         
         if (os.environ.has_key('AVAKAS') and os.environ['AVAKAS']):
             self.audio = False
@@ -101,7 +105,7 @@ class DivaEnvironment(Environment):
                                         output=True)
             
         self.synth = DivaSynth()
-        self.art = array([0.]*10 + [1]*3)   # 13 articulators is a constant from diva_synth.m in the diva source code
+        self.art = array([0.]*10 + [self.f0, self.pressure, self.voicing])   # 13 articulators is a constant from diva_synth.m in the diva source code
         
         self.max_params = []
         
@@ -135,7 +139,7 @@ class DivaEnvironment(Environment):
             if m_env == self.default_m:
                 res = self.default_sound
             else:
-                res = self.synth.execute(self.art.reshape(-1,1))[0]
+                res = self.synth.execute(2.*(self.art.reshape(-1,1)))[0]
             #print "compute_se result", res[self.s_used].flatten()
             formants = log2(transpose(res[self.s_used]))
             formants[isnan(formants)] = 0.
@@ -146,11 +150,16 @@ class DivaEnvironment(Environment):
                 return self.default_formants
             else:
                 self.art_traj = zeros((13, array(m_env).shape[0]))
-                self.art_traj[11:13, :] = 1
+                #self.art_traj = zeros((13, array(m_env).shape[0]))
+                self.art_traj[10, :] = self.f0
+                self.art_traj[11, :] = self.pressure
+                self.art_traj[12, :] = self.voicing
                 self.art_traj[self.m_used,:] = transpose(m_env)
-                res = self.synth.execute(self.art_traj)[0]
-                if isnan(sum(log2(transpose(res[self.s_used,:])))):
-                    print "diva NaN:"
+                res = self.synth.execute(2.*(self.art_traj))[0]
+                #res = self.synth.execute(np.arctanh(self.art_traj))[0]
+                
+                #if isnan(sum(log2(transpose(res[self.s_used,:])))):
+                #    print "diva NaN:"
     #                 print "m_env", m_env
     #                 print "self.art_traj", self.art_traj, 
     #                 print "res", res, 
@@ -183,12 +192,13 @@ class DivaEnvironment(Environment):
         return y
         
         
-    def update(self, mov):
+    def update(self, mov, audio=True):
         s = Environment.update(self, mov)
         
-        if self.audio:         
+        if self.audio and audio:
             sound = self.sound_wave(self.art_traj)
             self.stream.write(sound.astype(float32).tostring())
+            #time.sleep(1)
             #print "Sound sent", sound, len(sound)
         return s    
         #return [s_[0] for s_ in s] + [s_[1] for s_ in s] 

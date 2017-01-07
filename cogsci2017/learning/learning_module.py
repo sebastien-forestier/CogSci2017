@@ -29,6 +29,7 @@ class LearningModule(Agent):
         self.motor_babbling_n_iter = 0
         
         self.s = None
+        self.sp = None
         self.last_interest = 0
         
         if context_mode is not None:
@@ -97,27 +98,11 @@ class LearningModule(Agent):
         m,_ = self.infer(self.conf.s_dims, self.conf.m_dims, s, pref='', explore=explore)
         return self.motor_primitive(m)
         
-    def infer(self, expl_dims, inf_dims, x, pref='', n=1, explore=True):      
-        try:
-            if self.n_bootstrap > 0:
-                self.n_bootstrap -= 1
-                raise ExplautoBootstrapError
-            mode = "explore" if explore else "exploit"
-            if n == 1:
-                self.sensorimotor_model.mode = mode
-                m = self.sensorimotor_model.infer(expl_dims, inf_dims, x.flatten())
-            else:
-                self.sensorimotor_model.mode = mode
-                m = []
-                for _ in range(n):
-                    m.append(self.sensorimotor_model.infer(expl_dims, inf_dims, x.flatten()))
-            self.emit(pref + 'inference' + '_' + self.mid, m)
-        except ExplautoBootstrapError:
-            if n == 1:
-                m = rand_bounds(self.conf.bounds[:, inf_dims]).flatten()
-            else:
-                m = rand_bounds(self.conf.bounds[:, inf_dims], n)
-        return m
+    def infer(self, expl_dims, inf_dims, x, pref='', explore=True):      
+        mode = "explore" if explore else "exploit"
+        self.sensorimotor_model.mode = mode
+        m, sp = self.sensorimotor_model.infer(expl_dims, inf_dims, x.flatten())
+        return m, sp
             
     def produce(self, context=None, j_sm=None):
         if self.t < self.motor_babbling_n_iter:
@@ -126,7 +111,7 @@ class LearningModule(Agent):
             self.x = np.zeros(len(self.expl_dims))
         else:
             self.x = self.choose(context)
-            self.y = self.infer(self.expl_dims, self.inf_dims, self.x)
+            self.y, self.sp = self.infer(self.expl_dims, self.inf_dims, self.x)
             
             self.m, self.s = self.extract_ms(self.x, self.y)
                    
@@ -138,7 +123,7 @@ class LearningModule(Agent):
     
     def update_im(self, m, s):
         if self.t >= self.motor_babbling_n_iter:
-            return self.interest_model.update(hstack((m, self.s)), hstack((m, s)))
+            self.interest_model.update(hstack((m, self.s)), hstack((m, s)), self.sp)
         
     def competence(self): return self.interest_model.competence()
     def progress(self): return self.interest_model.progress()
@@ -146,4 +131,4 @@ class LearningModule(Agent):
 
     def perceive(self, m, s):
         self.update_sm(m, s)
-        self.last_interest = self.update_im(m, s)
+        self.update_im(m, s)
