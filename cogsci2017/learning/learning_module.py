@@ -95,8 +95,8 @@ class LearningModule(Agent):
         return ms          
     
     def inverse(self, s, explore=False):
-        m,_ = self.infer(self.conf.s_dims, self.conf.m_dims, s, pref='', explore=explore)
-        return self.motor_primitive(m)
+        self.m,_ = self.infer(self.conf.s_dims, self.conf.m_dims, s, pref='', explore=explore)
+        return self.m
         
     def infer(self, expl_dims, inf_dims, x, pref='', explore=True):      
         mode = "explore" if explore else "exploit"

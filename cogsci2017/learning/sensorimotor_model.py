@@ -50,7 +50,9 @@ class DemonstrableNN(NonParametric):
                     sp = array(self.model.predict_effect(tuple(res)))
                     return res, sp
                 else:  # exploit'
-                    return array(self.model.infer_order(tuple(x)))
+                    res = array(self.model.infer_order(tuple(x)))
+                    sp = array(self.model.predict_effect(tuple(res)))
+                    return res, sp
 
         else:
             raise NotImplementedError

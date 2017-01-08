@@ -306,7 +306,7 @@ class CogSci2017Environment(Environment):
                 self.logs_toy3.append([self.current_toy3])
                 self.logs_caregiver.append([self.current_caregiver])
         
-            if (i + 1) % (self.timesteps / 5) == 0:
+            if i in [0, 12, 24, 37, 49]:
                 self.hand = self.hand + [arm_x, arm_y]
                 self.tool = self.tool + self.current_tool[:2]
                 self.toy1 = self.toy1 + self.current_toy1[:2]
@@ -329,10 +329,10 @@ class CogSci2017Environment(Environment):
                 label = self.give_label("toy3", self.logs_toy3)
             else:
                 label = [[0.,0.]] * 50
-            self.sound = [f for formants in label[0::10] for f in formants]
+            self.sound = [f for formants in label[[0, 12, 24, 37, 49]] for f in formants]
             #print "parent sound", label, sound
         else:
-            self.sound = [f for formants in diva_traj[0::10] for f in formants]
+            self.sound = [f for formants in diva_traj[[0, 12, 24, 37, 49]] for f in formants]
         
             
         
