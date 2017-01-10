@@ -155,7 +155,9 @@ class DivaEnvironment(Environment):
                 self.art_traj[11, :] = self.pressure
                 self.art_traj[12, :] = self.voicing
                 self.art_traj[self.m_used,:] = transpose(m_env)
+                
                 res = self.synth.execute(2.*(self.art_traj))[0]
+                
                 #res = self.synth.execute(np.arctanh(self.art_traj))[0]
                 
                 #if isnan(sum(log2(transpose(res[self.s_used,:])))):
@@ -166,6 +168,7 @@ class DivaEnvironment(Environment):
     #                 print "formants", log2(transpose(res[self.s_used,:]))
                 formants = log2(transpose(res[self.s_used,:]))
                 formants[isnan(formants)] = 0.
+                
                 return formants
 
     def rest_params(self):

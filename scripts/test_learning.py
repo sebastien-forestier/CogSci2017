@@ -5,9 +5,9 @@ sys.path.append('../')
 from cogsci2017.environment.arm_diva_env import CogSci2017Environment
 from cogsci2017.learning.supervisor import Supervisor
 
-iterations = 10000
+iterations = 100
 
-environment = CogSci2017Environment(gui=False, audio=False)
+environment = CogSci2017Environment(gui=True, audio=True)
 
 
 config = dict(m_mins=environment.conf.m_mins,
@@ -15,7 +15,7 @@ config = dict(m_mins=environment.conf.m_mins,
              s_mins=environment.conf.s_mins,
              s_maxs=environment.conf.s_maxs)
 
-agent = Supervisor(config)
+agent = Supervisor(config, model_babbling="random", explo_noise=0.05)
 
 t0 = time.time()
 

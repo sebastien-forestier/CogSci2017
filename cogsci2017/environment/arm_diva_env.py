@@ -40,18 +40,42 @@ class CogSci2017Environment(Environment):
                         gui=gui)
         
         
-        # DIVA CONFIG
+        # SOUND CONFIG
         
-        self.sound_o = list(np.log2([500, 900]))
-        self.sound_y = list(np.log2([300, 1700]))
-        self.sound_u = list(np.log2([300, 800]))
-        self.sound_e = list(np.log2([600, 1700]))
+        self.v_o = list(np.log2([500, 900]))
+        self.v_y = list(np.log2([300, 1700]))
+        self.v_u = list(np.log2([300, 800]))
+        self.v_e = list(np.log2([400, 2200]))
+        self.v_i = list(np.log2([300, 2300]))
+        
+        self.vowels = dict(o=self.v_o, y=self.v_y, u=self.v_u, e=self.v_e, i=self.v_i)
+        
+        self.human_sounds = ["uyi", "ieu", "euo", "oiy", "oey", "uie"]
+        
+        def compute_s_sound(sound):
+            s1 = self.vowels[sound[0]]
+            s2 = [(self.vowels[sound[0]][0] + self.vowels[sound[1]][0]) / 2., (self.vowels[sound[0]][1] + self.vowels[sound[1]][1]) / 2.]
+            s3 = self.vowels[sound[1]]
+            s4 = [(self.vowels[sound[1]][0] + self.vowels[sound[2]][0]) / 2., (self.vowels[sound[1]][1] + self.vowels[sound[2]][1]) / 2.]
+            s5 = self.vowels[sound[2]]
+            rdm = 0.05 * (2.*np.random.random((1,10))[0] - 1.)
+            return list(rdm + np.array([f[0] for f in [s1, s2, s3, s4, s5]] + [f[1] for f in [s1, s2, s3, s4, s5]]))
+        
+        
+        self.human_sounds_traj = dict()
+        for hs in self.human_sounds:
+            self.human_sounds_traj[hs] = compute_s_sound(hs)
+            
+        self.sound_tol = 0.5
+    
+
+        # DIVA CONFIG
         
         diva_cfg = dict(
                         m_mins = np.array([-1, -1, -1, -1, -1, -1, -1]),
                         m_maxs = np.array([1, 1, 1, 1, 1, 1, 1]),
-                        s_mins = np.array([ 7.,  9.]),
-                        s_maxs = np.array([ 10. ,  12.]),
+                        s_mins = np.array([ 7.5,  9.25]),
+                        s_maxs = np.array([ 9.5 ,  11.25]),
                         m_used = range(7),
                         s_used = range(1, 3),
                         rest_position_diva = list([0]*7),
@@ -71,7 +95,7 @@ class CogSci2017Environment(Environment):
         
         self.timesteps = 50
         
-        self.parent_gives_obj_factor = 0.99
+        self.caregiver_gives_obj_factor = 0.01
         self.tool_length = 0.5
         self.handle_tol = 0.1
         self.handle_tol_sq = self.handle_tol * self.handle_tol
@@ -81,10 +105,8 @@ class CogSci2017Environment(Environment):
         self.object_tol_tool = 0.1
         self.object_tol_tool_sq = self.object_tol_tool * self.object_tol_tool
         
-        self.formant_tol = 0.1
-        self.formants = None
-        self.vowel = None
         self.diva_traj = None
+        self.produced_sound = None
         
         Environment.__init__(self, 
                              m_mins= [-1.] * (21+28),
@@ -116,9 +138,6 @@ class CogSci2017Environment(Environment):
         self.count_toy2_by_hand = 0
         self.count_toy3_by_hand = 0
         self.count_parent_give_label = 0
-        self.count_diva_o = 0
-        self.count_diva_u = 0
-        self.count_diva_e = 0
         self.count_parent_give_object = 0
         self.time_arm = 0.
         self.time_diva = 0. 
@@ -133,17 +152,20 @@ class CogSci2017Environment(Environment):
         self.current_toy1[2] = 0.
         self.current_toy2[2] = 0.
         self.current_toy3[2] = 0.
+        self.current_caregiver = [2.*np.random.random()-1., np.random.random() + 1.]
+        
+        self.current_context = self.get_current_context()  
         
         self.hand = []
         self.tool = []
         self.toy1 = []
         self.toy2 = []
         self.toy3 = []
-        self.sound = []
         self.caregiver = []
         
-        self.current_context = self.get_current_context()  
+        self.purge_logs()
         
+    def purge_logs(self):
         self.logs_tool = []
         self.logs_toy1 = []
         self.logs_toy2 = []
@@ -161,9 +183,15 @@ class CogSci2017Environment(Environment):
     def compute_motor_command(self, m_ag):
         return bounds_min_max(m_ag, self.conf.m_mins, self.conf.m_maxs)
     
-    def motor_babbling(self):
+    def motor_babbling(self, arm=False, audio=False):
         m = rand_bounds(self.conf.m_bounds)[0]
-        if np.random.random() < 0.5:
+        if arm:
+            r = 1.
+        elif audio:
+            r = 0.
+        else:
+            r = np.random.random()
+        if r < 0.5:
             m[:21] = 0.
         else:
             m[21:] = 0.
@@ -175,20 +203,36 @@ class CogSci2017Environment(Environment):
     def is_tool_free(self):
         return (not self.current_toy1[2] == 2) and (not self.current_toy2[2] == 2) and (not self.current_toy3[2] == 2) 
 
-    def give_label(self, toy, toy_log):
-        for i in range(self.timesteps):
-            onset = i
-            if toy_log[i][0][2] > 0:
-                break
+    def give_label(self, toy):
         
         if toy == "toy1":
-            return [[0.,0.]] * onset + [self.sound_o] * (50 - onset)
+            print "Caregiver says", self.human_sounds[0]
+            return self.human_sounds_traj[self.human_sounds[0]]
         elif toy == "toy2":
-            return [[0.,0.]] * onset + [self.sound_y] * (50 - onset)
+            print "Caregiver says", self.human_sounds[1]
+            return self.human_sounds_traj[self.human_sounds[1]]
         elif toy == "toy3":
-            return [[0.,0.]] * onset + [self.sound_u] * (50 - onset)
+            print "Caregiver says", self.human_sounds[2]
+            return self.human_sounds_traj[self.human_sounds[2]]
+        elif toy == "random":
+            sound_id = np.random.choice([3, 4, 5])
+            print "Caregiver says", self.human_sounds[sound_id]
+            return self.human_sounds_traj[self.human_sounds[sound_id]]
         else:
             raise NotImplementedError
+        
+    def analysis_sound(self, diva_traj):
+        #return self.human_sounds[2]
+        for hs in self.human_sounds:            
+            if np.linalg.norm(np.array(self.human_sounds_traj[hs]) - np.array([f[0] for f in diva_traj[[0, 12, 24, 37, 49]]] + [f[1] for f in diva_traj[[0, 12, 24, 37, 49]]])) < self.sound_tol:
+                print "Agent says", hs
+                return hs
+        return None
+    
+    def caregiver_moves_obj(self, caregiver_pos, current_toy):
+        middle = [caregiver_pos[0]/2, caregiver_pos[1]/2]
+        return [current_toy[0] + self.caregiver_gives_obj_factor * (middle[0] - current_toy[0]), current_toy[1] + self.caregiver_gives_obj_factor * (middle[1] - current_toy[1]), current_toy[2]]
+        
         
     def compute_sensori_effect(self, m):
         t = time.time()
@@ -209,22 +253,10 @@ class CogSci2017Environment(Environment):
         if cmd == "diva":
             diva_traj = self.diva.update(m_diva)
             self.diva_traj = diva_traj
-            #print "diva traj", diva_traj
-            
-            if (self.sound_o[0] - self.formant_tol < diva_traj[-1][0] < self.sound_o[0] + self.formant_tol) and (self.sound_o[1] - self.formant_tol < diva_traj[-1][1] < self.sound_o[1] + self.formant_tol):
-                vowel = "o"
-            elif (self.sound_u[0] - self.formant_tol < diva_traj[-1][0] < self.sound_u[0] + self.formant_tol) and (self.sound_u[1] - self.formant_tol < diva_traj[-1][1] < self.sound_u[1] + self.formant_tol):
-                vowel = "u"
-            elif (self.sound_e[0] - self.formant_tol < diva_traj[-1][0] < self.sound_e[0] + self.formant_tol) and (self.sound_e[1] - self.formant_tol < diva_traj[-1][1] < self.sound_e[1] + self.formant_tol):
-                vowel = "e"
-            else:
-                vowel = None
-            #print "diva vowel:", vowel
+            self.produced_sound = self.analysis_sound(self.diva_traj)
         else:
             diva_traj = np.zeros((50,2))
-            vowel = None
-        self.vowel = vowel
-        self.formants = diva_traj[-1]
+            self.produced_sound = None
         
         
         for i in range(self.timesteps):
@@ -290,15 +322,12 @@ class CogSci2017Environment(Environment):
         
             else:
                 # parent gives object if label is produced
-                if self.vowel == "o":
-                    self.current_toy1[0] = self.current_toy1[0] * self.parent_gives_obj_factor
-                    self.current_toy1[1] = self.current_toy1[1] * self.parent_gives_obj_factor
-                elif self.vowel == "u":
-                    self.current_toy2[0] = self.current_toy2[0] * self.parent_gives_obj_factor
-                    self.current_toy2[1] = self.current_toy2[1] * self.parent_gives_obj_factor
-                elif self.vowel == "e":
-                    self.current_toy3[0] = self.current_toy3[0] * self.parent_gives_obj_factor
-                    self.current_toy3[1] = self.current_toy3[1] * self.parent_gives_obj_factor
+                if self.produced_sound == self.human_sounds[0]:
+                    self.current_toy1 =  self.caregiver_moves_obj(self.current_caregiver, self.current_toy1)
+                elif self.produced_sound == self.human_sounds[1]:
+                    self.current_toy2 =  self.caregiver_moves_obj(self.current_caregiver, self.current_toy2)
+                elif self.produced_sound == self.human_sounds[2]:
+                    self.current_toy3 =  self.caregiver_moves_obj(self.current_caregiver, self.current_toy3)
                     
                 
                 self.logs_toy1.append([self.current_toy1])
@@ -322,14 +351,14 @@ class CogSci2017Environment(Environment):
         if cmd == "arm":
             # parent gives label if object is touched by hand 
             if self.current_toy1[2] == 1:
-                label = self.give_label("toy1", self.logs_toy1)
+                label = self.give_label("toy1")
             elif self.current_toy2[2] == 1:
-                label = self.give_label("toy2", self.logs_toy2)
+                label = self.give_label("toy2")
             elif self.current_toy3[2] == 1:
-                label = self.give_label("toy3", self.logs_toy3)
+                label = self.give_label("toy3")
             else:
-                label = [[0.,0.]] * 50
-            self.sound = [f for formants in label[[0, 12, 24, 37, 49]] for f in formants]
+                label = self.give_label("random")
+            self.sound = label
             #print "parent sound", label, sound
         else:
             self.sound = [f for formants in diva_traj[[0, 12, 24, 37, 49]] for f in formants]
@@ -366,13 +395,7 @@ class CogSci2017Environment(Environment):
         elif self.current_tool[3] and self.current_toy3[2] == 2:
             self.count_toy3_by_tool += 1
         self.count_parent_give_label = self.count_toy1_by_hand + self.count_toy2_by_hand + self.count_toy3_by_hand
-        if self.vowel == "o":
-            self.count_diva_o += 1
-        elif self.vowel == "u":
-            self.count_diva_u += 1
-        elif self.vowel == "e":
-            self.count_diva_e += 1
-        self.count_parent_give_object = self.count_diva_o + self.count_diva_u + self.count_diva_e
+        #self.count_parent_give_object = self.count_diva_o + self.count_diva_u + self.count_diva_e
         if cmd == "arm":
             self.time_arm += time.time() - t
             self.time_arm_per_it = self.time_arm / self.count_arm
@@ -391,12 +414,23 @@ class CogSci2017Environment(Environment):
         
         self.t += 1
         
-        s = self.current_context + self.hand + self.tool + self.toy1 + self.toy2 + self.toy3 + self.sound + self.caregiver
         
-        #print "len(s)", len(s)
+        # MAP TO STD INTERVAL
+        context = [d/2 for d in self.current_context]
+        hand = [d/2 for d in self.hand]
+        tool = [d/2 for d in self.tool]
+        toy1 = [d/2 for d in self.toy1]
+        toy2 = [d/2 for d in self.toy2]
+        toy3 = [d/2 for d in self.toy3]
+        sound = [d - 8.5 for d in self.sound[:5]] + [d - 10.25 for d in self.sound[5:]]
+        caregiver = [d/2 for d in self.caregiver]
         
-        return s
-    
+        
+        s = context + hand + tool + toy1 + toy2 + toy3 + sound + caregiver
+        #print "s", list(bounds_min_max(s, self.conf.s_mins, self.conf.s_maxs))
+        return bounds_min_max(s, self.conf.s_mins, self.conf.s_maxs)
+
+
     def print_stats(self):
         print"\n----------------------\nEnvironment Statistics\n----------------------\n"
         print "#Iterations:", self.t
@@ -410,9 +444,6 @@ class CogSci2017Environment(Environment):
         print "#Toy2 was reached by hand:", self.count_toy2_by_hand
         print "#Toy3 was reached by hand:", self.count_toy3_by_hand
         print "#Parent gave vocal labels:", self.count_parent_give_label
-        print "#Vowel /o/:", self.count_diva_o
-        print "#Vowel /u/:", self.count_diva_u
-        print "#Vowel /e/:", self.count_diva_e
         print "#Parent gave object:", self.count_parent_give_object
         print
 
