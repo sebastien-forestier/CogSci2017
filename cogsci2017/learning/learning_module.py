@@ -12,7 +12,7 @@ from interest_model import MiscRandomInterest, ContextRandomInterest
 
 
 class LearningModule(Agent):
-    def __init__(self, mid, m_space, s_space, env_conf, explo_noise=0.1, context_mode=None):
+    def __init__(self, mid, m_space, s_space, env_conf, explo_noise=0.1, imitate=None, proba_imitate=0.5, context_mode=None):
 
         #print mid, m_space, s_space
         self.conf = make_configuration(env_conf.m_mins[m_space], 
@@ -27,6 +27,8 @@ class LearningModule(Agent):
         self.context_mode = context_mode
         self.s_space = s_space
         self.motor_babbling_n_iter = 0
+        self.proba_imitate = proba_imitate
+        self.imitate = imitate
         
         self.s = None
         self.sp = None
@@ -54,7 +56,6 @@ class LearningModule(Agent):
         
         Agent.__init__(self, self.conf, self.sm, self.im, context_mode=self.context_mode)
         
-
         
     def motor_babbling(self, n=1): 
         if n == 1:
@@ -69,6 +70,7 @@ class LearningModule(Agent):
             
     def get_m(self, ms): return array(ms[self.m_space])
     def get_s(self, ms): return array(ms[self.s_space])
+    def get_c(self, context): return array(context)[self.context_mode["context_dims"]]
         
     def set_one_m(self, ms, m):
         """ Set motor dimensions used by module
@@ -103,14 +105,36 @@ class LearningModule(Agent):
         self.sensorimotor_model.mode = mode
         m, sp = self.sensorimotor_model.infer(expl_dims, inf_dims, x.flatten())
         return m, sp
+    
+    def set_explo_noise(self, goal_error):
+        self.sm.model.imodel.fmodel.sigma_expl = 0.1 * goal_error
+        
+    def imitate_goal(self, imitate_sm, time_window=100, mode="uniform"):
+        n = len(imitate_sm)
+        #print "n", n, imitate_sm.buffer.data
+        if n > 0:
+            goals = [imitate_sm.get_y(idx)[8:] for idx in range(max(0, n - time_window), n)] # [8:] depend on mod6 context_n_dims
+            #print "imitate", goals
+            if mode == "uniform":
+                goal_dict = {goal.tostring(): goal for goal in goals} # Find unique goals
+                goal = np.array(goal_dict.values()[np.random.choice(range(len(goal_dict)))])
+                return goal
+            elif mode == "proportional":
+                return np.array(np.random.choice(goals))
+        else:
+            return np.zeros(len(self.expl_dims))
             
-    def produce(self, context=None, j_sm=None):
+    def produce(self, context=None, imitate_sm=None):
         if self.t < self.motor_babbling_n_iter:
             self.m = self.motor_babbling()
             self.s = np.zeros(len(self.s_space))
             self.x = np.zeros(len(self.expl_dims))
         else:
-            self.x = self.choose(context)
+            if imitate_sm is not None and np.random.random() < self.proba_imitate:
+                self.x = np.array(self.imitate_goal(imitate_sm))
+                #print self.x
+            else:
+                self.x = self.choose(context)
             self.y, self.sp = self.infer(self.expl_dims, self.inf_dims, self.x)
             
             self.m, self.s = self.extract_ms(self.x, self.y)

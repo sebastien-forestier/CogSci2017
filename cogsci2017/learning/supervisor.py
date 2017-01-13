@@ -6,14 +6,14 @@ from learning_module import LearningModule
 
 
 class Supervisor(object):
-    def __init__(self, config, model_babbling="random", n_motor_babbling=0, explo_noise=0.1, choice_eps=0.2):
+    def __init__(self, config, model_babbling="random", n_motor_babbling=0, explo_noise=0.1, choice_eps=0.2, proba_imitate=0.5):
         
         self.config = config
         self.model_babbling = model_babbling
         self.n_motor_babbling = n_motor_babbling
         self.explo_noise = explo_noise
         self.choice_eps = choice_eps
-        
+        self.proba_imitate = proba_imitate
         self.conf = make_configuration(**config)
         
         self.t = 0
@@ -23,6 +23,7 @@ class Supervisor(object):
         self.interests_evolution = {}
         
         self.mid_control = None
+        self.last_cmd = None
         
         # Define motor and sensory spaces:
         m_ndims = self.conf.m_ndims # number of motor parameters
@@ -51,23 +52,25 @@ class Supervisor(object):
                              s_caregiver=self.s_caregiver)
         
         # Create the 10 learning modules:
-        self.modules['mod1'] = LearningModule("mod1", self.m_arm, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod2'] = LearningModule("mod2", self.m_arm, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod3'] = LearningModule("mod3", self.m_arm, self.c_dims + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod4'] = LearningModule("mod4", self.m_arm, self.c_dims + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod5'] = LearningModule("mod5", self.m_arm, self.c_dims + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod6'] = LearningModule("mod6", self.m_arm, self.c_dims + self.s_sound, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        self.modules['mod1'] = LearningModule("mod1", self.m_arm, self.s_hand, self.conf, explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        #self.modules['mod1'] = LearningModule("mod1", self.m_arm, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod2'] = LearningModule("mod2", self.m_arm, self.c_dims[0:2] + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_dims=[0, 1], context_n_dims=2, context_sensory_bounds=[[-1.]*2,[1.]*2]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod3'] = LearningModule("mod3", self.m_arm, self.c_dims[0:4] + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_dims=[0, 1, 2, 3], context_n_dims=4, context_sensory_bounds=[[-1.]*4,[1.]*4]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod4'] = LearningModule("mod4", self.m_arm, self.c_dims[0:2] + self.c_dims[4:6] + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_dims=[0, 1, 4, 5], context_n_dims=4, context_sensory_bounds=[[-1.]*4,[1.]*4]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod5'] = LearningModule("mod5", self.m_arm, self.c_dims[0:2] + self.c_dims[6:8] + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_dims=[0, 1, 6, 7], context_n_dims=4, context_sensory_bounds=[[-1.]*4,[1.]*4]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod6'] = LearningModule("mod6", self.m_arm, self.c_dims[0:8] + self.s_sound, self.conf, context_mode=dict(mode='mcs', context_dims=[0, 1, 2, 3, 4, 5, 6, 7], context_n_dims=8, context_sensory_bounds=[[-1.]*8,[1.]*8]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
         
-        self.modules['mod10'] = LearningModule("mod10", self.m_diva, self.c_dims + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod11'] = LearningModule("mod11", self.m_diva, self.c_dims + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod12'] = LearningModule("mod12", self.m_diva, self.c_dims + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        self.modules['mod13'] = LearningModule("mod13", self.m_diva, self.c_dims + self.s_sound, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
+        self.modules['mod10'] = LearningModule("mod10", self.m_diva, self.c_dims[2:4] + self.c_dims[8:10] + self.s_toy1, self.conf, context_mode=dict(mode='mcs', context_dims=[2, 3, 8, 9], context_n_dims=4, context_sensory_bounds=[[-1.]*4,[1.]*4]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod11'] = LearningModule("mod11", self.m_diva, self.c_dims[4:6] + self.c_dims[8:10] + self.s_toy2, self.conf, context_mode=dict(mode='mcs', context_dims=[4, 5, 8, 9], context_n_dims=4, context_sensory_bounds=[[-1.]*4,[1.]*4]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod12'] = LearningModule("mod12", self.m_diva, self.c_dims[6:8] + self.c_dims[8:10] + self.s_toy3, self.conf, context_mode=dict(mode='mcs', context_dims=[6, 7, 8, 9], context_n_dims=4, context_sensory_bounds=[[-1.]*4,[1.]*4]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
         
+        #self.modules['mod13'] = LearningModule("mod13", self.m_diva, self.c_dims + self.s_sound, self.conf, imitate="mod6", context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        self.modules['mod13'] = LearningModule("mod13", self.m_diva, self.s_sound, self.conf, imitate="mod6", explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
         
-        #self.modules['mod7'] = LearningModule("mod7", self.m_arm, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)        
-        #self.modules['mod8'] = LearningModule("mod8", self.m_diva, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)
-        #self.modules['mod9'] = LearningModule("mod9", self.m_diva, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)        
-        #self.modules['mod14'] = LearningModule("mod14", self.m_diva, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise)  
+        #self.modules['mod7'] = LearningModule("mod7", self.m_arm, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)        
+        #self.modules['mod8'] = LearningModule("mod8", self.m_diva, self.c_dims + self.s_hand, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)
+        #self.modules['mod9'] = LearningModule("mod9", self.m_diva, self.c_dims + self.s_tool, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)        
+        #self.modules['mod14'] = LearningModule("mod14", self.m_diva, self.c_dims + self.s_caregiver, self.conf, context_mode=dict(mode='mcs', context_n_dims=10, context_sensory_bounds=[[-1.]*10,[1.]*10]), explo_noise=self.explo_noise, proba_imitate=self.proba_imitate)  
          
 
         for mid in self.modules.keys():
@@ -162,7 +165,8 @@ class Supervisor(object):
             
     def update_sensorimotor_models(self, ms):
         for mid in self.modules.keys():
-            self.modules[mid].update_sm(self.modules[mid].get_m(ms), self.modules[mid].get_s(ms))
+            if self.last_cmd == self.mid2motor_space(mid):
+                self.modules[mid].update_sm(self.modules[mid].get_m(ms), self.modules[mid].get_s(ms))
         
     def produce(self, context):
         if self.t < self.n_motor_babbling:
@@ -173,11 +177,19 @@ class Supervisor(object):
             mid = self.choose_babbling_module()
             self.mid_control = mid
             
-            m = self.modules[mid].produce(context=context)
+            mid_c = self.modules[mid].get_c(context) if self.modules[mid].context_mode else None
+            
+            if self.modules[mid].imitate is not None:
+                m = self.modules[mid].produce(context=mid_c, imitate_sm=self.modules[self.modules[mid].imitate].sm.model.imodel.fmodel.dataset)
+            else:                
+                m = self.modules[mid].produce(context=mid_c)
+                
             if self.mid2motor_space(mid) == "arm":
+                self.last_cmd = "arm"
                 self.m = list(m) + [0.]*self.diva_n_dims
                 self.count_arm += 1
             else:
+                self.last_cmd = "diva"
                 self.m = [0.]*self.arm_n_dims + list(m)
                 self.count_diva += 1
             return self.m

@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 
 from diva import DivaEnvironment
@@ -48,9 +49,13 @@ class CogSci2017Environment(Environment):
         self.v_e = list(np.log2([400, 2200]))
         self.v_i = list(np.log2([300, 2300]))
         
+        
         self.vowels = dict(o=self.v_o, y=self.v_y, u=self.v_u, e=self.v_e, i=self.v_i)
         
         self.human_sounds = ["uyi", "ieu", "euo", "oiy", "oey", "uie"]
+        random.shuffle(self.human_sounds)
+        print "human sounds", self.human_sounds
+        
         
         def compute_s_sound(sound):
             s1 = self.vowels[sound[0]]
@@ -58,13 +63,19 @@ class CogSci2017Environment(Environment):
             s3 = self.vowels[sound[1]]
             s4 = [(self.vowels[sound[1]][0] + self.vowels[sound[2]][0]) / 2., (self.vowels[sound[1]][1] + self.vowels[sound[2]][1]) / 2.]
             s5 = self.vowels[sound[2]]
-            rdm = 0.05 * (2.*np.random.random((1,10))[0] - 1.)
+            rdm = 0.0 * (2.*np.random.random((1,10))[0] - 1.)
             return list(rdm + np.array([f[0] for f in [s1, s2, s3, s4, s5]] + [f[1] for f in [s1, s2, s3, s4, s5]]))
         
         
         self.human_sounds_traj = dict()
+        self.human_sounds_traj_std = dict()
+        self.best_vocal_errors = {}
+        self.best_vocal_errors_evolution = {}
         for hs in self.human_sounds:
+            self.best_vocal_errors[hs] = 10.
             self.human_sounds_traj[hs] = compute_s_sound(hs)
+            self.human_sounds_traj_std[hs] = [d - 8.5 for d in self.human_sounds_traj[hs][:5]] + [d - 10.25 for d in self.human_sounds_traj[hs][5:]]    
+    
             
         self.sound_tol = 0.5
     
@@ -95,9 +106,12 @@ class CogSci2017Environment(Environment):
         
         self.timesteps = 50
         
+        
+        # OBJECTS CONFIG
+        
         self.caregiver_gives_obj_factor = 0.01
         self.tool_length = 0.5
-        self.handle_tol = 0.1
+        self.handle_tol = 0.2
         self.handle_tol_sq = self.handle_tol * self.handle_tol
         self.handle_noise = 0.
         self.object_tol_hand = 0.1
@@ -139,6 +153,10 @@ class CogSci2017Environment(Environment):
         self.count_toy3_by_hand = 0
         self.count_parent_give_label = 0
         self.count_parent_give_object = 0
+        self.count_produced_sounds = {}
+        for hs in self.human_sounds:
+            self.count_produced_sounds[hs] = 0
+        
         self.time_arm = 0.
         self.time_diva = 0. 
         self.time_arm_per_it = 0.
@@ -146,6 +164,25 @@ class CogSci2017Environment(Environment):
         
         self.t = 0
           
+          
+    def save(self):
+        return dict(t=self.t,
+                    human_sounds=self.human_sounds,
+                    best_vocal_errors=self.best_vocal_errors,
+                    best_vocal_errors_evolution=self.best_vocal_errors_evolution,
+                    count_diva=self.count_diva,
+                    count_arm=self.count_arm,
+                    count_tool=self.count_tool,
+                    count_toy1_by_tool=self.count_toy1_by_tool,
+                    count_toy2_by_tool=self.count_toy2_by_tool,
+                    count_toy3_by_tool=self.count_toy3_by_tool,
+                    count_toy1_by_hand=self.count_toy1_by_hand,
+                    count_toy2_by_hand=self.count_toy2_by_hand,
+                    count_toy3_by_hand=self.count_toy3_by_hand,
+                    count_parent_give_label=self.count_parent_give_label,
+                    count_parent_give_object=self.count_parent_give_object,
+                    count_produced_sounds=self.count_produced_sounds,
+                    )
 
     def reset(self):
         self.current_tool[3] = 0.
@@ -206,26 +243,29 @@ class CogSci2017Environment(Environment):
     def give_label(self, toy):
         
         if toy == "toy1":
-            print "Caregiver says", self.human_sounds[0]
+            #print "Caregiver says", self.human_sounds[0] 
             return self.human_sounds_traj[self.human_sounds[0]]
         elif toy == "toy2":
-            print "Caregiver says", self.human_sounds[1]
+            #print "Caregiver says", self.human_sounds[1]
             return self.human_sounds_traj[self.human_sounds[1]]
         elif toy == "toy3":
-            print "Caregiver says", self.human_sounds[2]
+            #print "Caregiver says", self.human_sounds[2]
             return self.human_sounds_traj[self.human_sounds[2]]
         elif toy == "random":
             sound_id = np.random.choice([3, 4, 5])
-            print "Caregiver says", self.human_sounds[sound_id]
+            #print "Caregiver says", self.human_sounds[sound_id]
             return self.human_sounds_traj[self.human_sounds[sound_id]]
         else:
             raise NotImplementedError
         
     def analysis_sound(self, diva_traj):
         #return self.human_sounds[2]
-        for hs in self.human_sounds:            
-            if np.linalg.norm(np.array(self.human_sounds_traj[hs]) - np.array([f[0] for f in diva_traj[[0, 12, 24, 37, 49]]] + [f[1] for f in diva_traj[[0, 12, 24, 37, 49]]])) < self.sound_tol:
-                print "Agent says", hs
+        for hs in self.human_sounds:          
+            error = np.linalg.norm(np.array(self.human_sounds_traj[hs]) - np.array([f[0] for f in diva_traj[[0, 12, 24, 37, 49]]] + [f[1] for f in diva_traj[[0, 12, 24, 37, 49]]]))
+            if error < self.best_vocal_errors[hs]:
+                self.best_vocal_errors[hs] = error
+            if error < self.sound_tol:
+                print "***********Agent says", hs
                 return hs
         return None
     
@@ -254,6 +294,10 @@ class CogSci2017Environment(Environment):
             diva_traj = self.diva.update(m_diva)
             self.diva_traj = diva_traj
             self.produced_sound = self.analysis_sound(self.diva_traj)
+            if self.produced_sound is not None:
+                self.count_produced_sounds[self.produced_sound] += 1
+                if self.produced_sound in self.human_sounds[:3]:                    
+                    self.count_parent_give_object += 1 
         else:
             diva_traj = np.zeros((50,2))
             self.produced_sound = None
@@ -359,10 +403,10 @@ class CogSci2017Environment(Environment):
             else:
                 label = self.give_label("random")
             self.sound = label
-            #print "parent sound", label, sound
+            #print "parent sound", label, self.sound
         else:
             self.sound = [f for formants in diva_traj[[0, 12, 24, 37, 49]] for f in formants]
-        
+            self.sound = self.sound[0::2] + self.sound[1::2]
             
         
         # Sort dims            
@@ -372,7 +416,7 @@ class CogSci2017Environment(Environment):
         self.toy2 = self.toy2[0::2] + self.toy2[1::2]
         self.toy3 = self.toy3[0::2] + self.toy3[1::2]
         self.caregiver = self.caregiver[0::2] + self.caregiver[1::2]
-        self.sound = self.sound[0::2] + self.sound[1::2]
+        #self.sound = self.sound[0::2] + self.sound[1::2]
         
 
         # Analysis
@@ -395,7 +439,7 @@ class CogSci2017Environment(Environment):
         elif self.current_tool[3] and self.current_toy3[2] == 2:
             self.count_toy3_by_tool += 1
         self.count_parent_give_label = self.count_toy1_by_hand + self.count_toy2_by_hand + self.count_toy3_by_hand
-        #self.count_parent_give_object = self.count_diva_o + self.count_diva_u + self.count_diva_e
+
         if cmd == "arm":
             self.time_arm += time.time() - t
             self.time_arm_per_it = self.time_arm / self.count_arm
@@ -413,6 +457,9 @@ class CogSci2017Environment(Environment):
         #print "s_caregiver", len(self.caregiver), self.caregiver
         
         self.t += 1
+        self.best_vocal_errors_evolution += [self.best_vocal_errors]
+        if self.t % 100 == 0:
+            print "best_vocal_errors", self.best_vocal_errors
         
         
         # MAP TO STD INTERVAL
@@ -425,26 +472,26 @@ class CogSci2017Environment(Environment):
         sound = [d - 8.5 for d in self.sound[:5]] + [d - 10.25 for d in self.sound[5:]]
         caregiver = [d/2 for d in self.caregiver]
         
-        
         s = context + hand + tool + toy1 + toy2 + toy3 + sound + caregiver
-        #print "s", list(bounds_min_max(s, self.conf.s_mins, self.conf.s_maxs))
+        #print "s_sound", sound
         return bounds_min_max(s, self.conf.s_mins, self.conf.s_maxs)
 
 
     def print_stats(self):
         print"\n----------------------\nEnvironment Statistics\n----------------------\n"
-        print "#Iterations:", self.t
-        print "#Arm trials:", self.count_arm
-        print "#Vocal trials:", self.count_diva
-        print "#Tool actions:", self.count_tool
-        print "#Toy1 was reached by tool:", self.count_toy1_by_tool
-        print "#Toy2 was reached by tool:", self.count_toy2_by_tool
-        print "#Toy3 was reached by tool:", self.count_toy3_by_tool
-        print "#Toy1 was reached by hand:", self.count_toy1_by_hand
-        print "#Toy2 was reached by hand:", self.count_toy2_by_hand
-        print "#Toy3 was reached by hand:", self.count_toy3_by_hand
-        print "#Parent gave vocal labels:", self.count_parent_give_label
-        print "#Parent gave object:", self.count_parent_give_object
+        print "# Iterations:", self.t
+        print "# Arm trials:", self.count_arm
+        print "# Vocal trials:", self.count_diva
+        print "# Tool actions:", self.count_tool
+        print "# Produced sounds:", self.count_produced_sounds
+        print "# Toy1 was reached by tool:", self.count_toy1_by_tool
+        print "# Toy2 was reached by tool:", self.count_toy2_by_tool
+        print "# Toy3 was reached by tool:", self.count_toy3_by_tool
+        print "# Toy1 was reached by hand:", self.count_toy1_by_hand
+        print "# Toy2 was reached by hand:", self.count_toy2_by_hand
+        print "# Toy3 was reached by hand:", self.count_toy3_by_hand
+        print "# Parent gave vocal labels:", self.count_parent_give_label
+        print "# Parent gave object:", self.count_parent_give_object
         print
 
     def init_plot(self):
