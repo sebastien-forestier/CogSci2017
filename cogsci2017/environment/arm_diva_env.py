@@ -25,6 +25,8 @@ colors_config = {
 class CogSci2017Environment(Environment):
     def __init__(self, gui=False, audio=False):
         
+        self.t = 0
+        
         # ARM CONFIG
         
         arm_cfg = dict(
@@ -70,7 +72,7 @@ class CogSci2017Environment(Environment):
         self.human_sounds_traj = dict()
         self.human_sounds_traj_std = dict()
         self.best_vocal_errors = {}
-        self.best_vocal_errors_evolution = {}
+        self.best_vocal_errors_evolution = []
         for hs in self.human_sounds:
             self.best_vocal_errors[hs] = 10.
             self.human_sounds_traj[hs] = compute_s_sound(hs)
@@ -162,7 +164,6 @@ class CogSci2017Environment(Environment):
         self.time_arm_per_it = 0.
         self.time_diva_per_it = 0. 
         
-        self.t = 0
           
           
     def save(self):
@@ -185,11 +186,18 @@ class CogSci2017Environment(Environment):
                     )
 
     def reset(self):
+        
+        if self.t % 20 == 0: 
+            self.current_toy1[:2] = self.reset_rand2d(region=0)
+            self.current_toy2[:2] = self.reset_rand2d(region=0)
+            self.current_toy3[:2] = self.reset_rand2d(region=0)
+        
+        
         self.current_tool[3] = 0.
         self.current_toy1[2] = 0.
         self.current_toy2[2] = 0.
         self.current_toy3[2] = 0.
-        self.current_caregiver = [2.*np.random.random()-1., np.random.random() + 1.]
+        self.current_caregiver = self.reset_rand2d()
         
         self.current_context = self.get_current_context()  
         
@@ -208,6 +216,31 @@ class CogSci2017Environment(Environment):
         self.logs_toy2 = []
         self.logs_toy3 = []
         self.logs_caregiver = []
+        
+    def reset_rand2d(self, region=None):
+        if region == 0:
+            rdm = np.random.random()
+            if rdm < 1. / 3.:
+                return self.reset_rand2d(region=1)
+            elif rdm < 2. / 3.:
+                return self.reset_rand2d(region=2)
+            else:
+                return self.reset_rand2d(region=3)
+        elif region == 1:
+            alpha = 2. * np.pi * np.random.random()
+            r = np.random.random()
+            return [r * np.cos(alpha), r * np.sin(alpha)]
+        elif region == 2:
+            alpha = 2. * np.pi * np.random.random()
+            r = 1. + 0.5 * np.random.random()
+            return [r * np.cos(alpha), r * np.sin(alpha)]  
+        elif region == 3:
+            alpha = 2. * np.pi * np.random.random()
+            r = 1.5 + 0.5 * np.random.random()
+            return [r * np.cos(alpha), r * np.sin(alpha)]            
+        elif region is None:
+            return [4. * np.random.random() - 2., 4. * np.random.random() - 2.]
+        
         
     def get_current_context(self):
         return self.current_tool[:2] + self.current_toy1[:2] + self.current_toy2[:2] + self.current_toy3[:2] + self.current_caregiver

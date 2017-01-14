@@ -19,8 +19,8 @@ class Supervisor(object):
         self.t = 0
         self.modules = {}
         self.chosen_modules = []
-        self.progresses_evolution = {}
-        self.interests_evolution = {}
+        self.cp_evolution = {}
+        self.pp_evolution = {}
         
         self.mid_control = None
         self.last_cmd = None
@@ -74,8 +74,8 @@ class Supervisor(object):
          
 
         for mid in self.modules.keys():
-            self.progresses_evolution[mid] = []
-            self.interests_evolution[mid] = []
+            self.cp_evolution[mid] = []
+            self.pp_evolution[mid] = []
             
         self.count_arm = 0
         self.count_diva = 0
@@ -98,9 +98,8 @@ class Supervisor(object):
         return {"sm_data":sm_data,
                 "im_data":im_data,
                 "chosen_modules":self.chosen_modules,
-                "progresses_evolution":self.progresses_evolution,
-                "interests_evolution":self.interests_evolution,
-                "normalized_interests_evolution":self.get_normalized_interests_evolution()}
+                "cp_evolution":self.cp_evolution,
+                "pp_evolution":self.pp_evolution,}
 
         
     def choose_babbling_module(self):
@@ -203,25 +202,8 @@ class Supervisor(object):
         self.t = self.t + 1
         
         for mid in self.modules.keys():
-            self.progresses_evolution[mid].append(self.modules[mid].progress())
-            self.interests_evolution[mid].append(self.modules[mid].interest())            
-
-    def get_normalized_interests_evolution(self):
-        data = np.transpose(np.array([self.interests_evolution[mid] for mid in self.mids]))
-        data_sum = data.sum(axis=1)
-        data_sum[data_sum==0.] = 1.
-        return data / data_sum.reshape(data.shape[0],1)
-    
-    def get_normalized_interests(self):
-        interests = {}
-        for mid in self.modules.keys():
-            interests[mid] = self.modules[mid].interest()
-            
-        s = sum(interests.values())
-        if s > 0:
-            for mid in self.modules.keys():
-                interests[mid] = interests[mid] / s
-        return interests
+            self.cp_evolution[mid].append(self.modules[mid].interest_model.current_competence_progress)
+            self.pp_evolution[mid].append(self.modules[mid].interest_model.current_prediction_progress)            
         
     def print_stats(self):
         print "\n----------------\nAgent Statistics\n----------------\n"
