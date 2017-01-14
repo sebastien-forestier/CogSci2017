@@ -141,9 +141,15 @@ class LearningModule(Agent):
                    
         return self.m        
     
+    def s_moved(self, s):
+        ncdims = self.context_mode['context_n_dims'] if self.context_mode else 0
+        s = np.array(s[ncdims:])
+        return np.linalg.norm(s - s.mean()) > 0        
+    
     def update_sm(self, m, s): 
-        self.sensorimotor_model.update(m, s)   
-        self.t += 1 
+        if self.s_moved(s):
+            self.sensorimotor_model.update(m, s)   
+            self.t += 1 
     
     def update_im(self, m, s):
         if self.t >= self.motor_babbling_n_iter:
