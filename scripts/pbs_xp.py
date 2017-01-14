@@ -14,7 +14,7 @@ config_list = ["RMB"]
 
 
 
-path = '/home/sforestier/software/CogSci2017/script/'
+path = '/home/sforestier/software/CogSci2017/scripts/'
 start_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 pool_name = sys.argv[1]
 
