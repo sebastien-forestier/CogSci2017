@@ -12,6 +12,7 @@ import numpy as np
 # CONFIGS
 config_list = ["RMB"]
 
+n_iter = 10
 
 
 path = '/home/sforestier/software/CogSci2017/scripts/'
@@ -42,7 +43,6 @@ log_dir = '/scratch/sforestier001/logs/CogSci2017/' + start_date + '-' + pool_na
 
 
 
-n_iter = 100
 trial_list = range(1,n_iter + 1) 
 
 
