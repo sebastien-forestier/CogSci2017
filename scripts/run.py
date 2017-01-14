@@ -19,7 +19,7 @@ def run(log_dir, config_name, trial):
     # PARAMS
     if config_name == "RMB":
         
-        iterations = 2000
+        iterations = 50000
         model_babbling = "random"
         n_motor_babbling = 1000
         explo_noise = 0.05
@@ -66,21 +66,21 @@ def run(log_dir, config_name, trial):
             if agent.mid_control == "mod10": 
                 if environment.produced_sound == environment.human_sounds[0]:
                     count_social_tool_1 += [i]
-                    print "----------------------------produced sound MATCHED", environment.produced_sound, "while training to move toy1"
+                    print "++++++++++++++++++++++++++++produced sound MATCHED", environment.produced_sound, "while training to move toy1"
                 else:
                     count_social_tool_1_unmatched += [i]
                     print "----------------------------produced sound NOT MATCHED", environment.produced_sound, "while training to move toy1"
             elif agent.mid_control == "mod11": 
                 if environment.produced_sound == environment.human_sounds[1]:
                     count_social_tool_2 += [i]
-                    print "----------------------------produced sound MATCHED", environment.produced_sound, "while training to move toy2"
+                    print "++++++++++++++++++++++++++++produced sound MATCHED", environment.produced_sound, "while training to move toy2"
                 else:
                     count_social_tool_2_unmatched += [i]
                     print "----------------------------produced sound NOT MATCHED", environment.produced_sound, "while training to move toy2"
             elif agent.mid_control == "mod12":  
                 if environment.produced_sound == environment.human_sounds[2]:
                     count_social_tool_3 += [i]
-                    print "----------------------------produced sound MATCHED", environment.produced_sound, "while training to move toy3"
+                    print "++++++++++++++++++++++++++++produced sound MATCHED", environment.produced_sound, "while training to move toy3"
                 else:
                     count_social_tool_3_unmatched += [i]
                     print "----------------------------produced sound NOT MATCHED", environment.produced_sound, "while training to move toy3"
@@ -103,12 +103,12 @@ def run(log_dir, config_name, trial):
     print "Time per iteration", 1000*(time.time() - t0)/iterations, "ms"
     
     social_tool_use = dict(
-                           count_social_tool_1,
-                           count_social_tool_1_unmatched,
-                           count_social_tool_2,
-                           count_social_tool_2_unmatched,
-                           count_social_tool_3,
-                           count_social_tool_3_unmatched)
+                           count_social_tool_1=count_social_tool_1,
+                           count_social_tool_1_unmatched=count_social_tool_1_unmatched,
+                           count_social_tool_2=count_social_tool_2,
+                           count_social_tool_2_unmatched=count_social_tool_2_unmatched,
+                           count_social_tool_3=count_social_tool_3,
+                           count_social_tool_3_unmatched=count_social_tool_3_unmatched)
     
     # ANALYSE COMPETENCE ERROR
     # TODO

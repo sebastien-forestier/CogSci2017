@@ -412,12 +412,14 @@ class CogSci2017Environment(Environment):
                 self.logs_toy3.append([self.current_toy3])
                 self.logs_caregiver.append([self.current_caregiver])
         
-            if i in [0, 12, 24, 37, 49]:
+            if i in [0, 10, 20, 30, 40, 49]:
                 self.hand = self.hand + [arm_x, arm_y]
                 self.tool = self.tool + self.current_tool[:2]
                 self.toy1 = self.toy1 + self.current_toy1[:2]
                 self.toy2 = self.toy2 + self.current_toy2[:2]
                 self.toy3 = self.toy3 + self.current_toy3[:2]
+                
+            if i in [0, 12, 24, 37, 49]:
                 self.caregiver = self.caregiver + self.current_caregiver
         
             if self.arm.gui:
@@ -491,8 +493,8 @@ class CogSci2017Environment(Environment):
         
         self.t += 1
         self.best_vocal_errors_evolution += [self.best_vocal_errors]
-        if self.t % 100 == 0:
-            print "best_vocal_errors", self.best_vocal_errors
+        if self.t % 1000 == 0:
+            print "best_vocal_errors", [(hs,self.best_vocal_errors[hs]) for hs in self.human_sounds]
         
         
         # MAP TO STD INTERVAL
@@ -504,6 +506,24 @@ class CogSci2017Environment(Environment):
         toy3 = [d/2 for d in self.toy3]
         sound = [d - 8.5 for d in self.sound[:5]] + [d - 10.25 for d in self.sound[5:]]
         caregiver = [d/2 for d in self.caregiver]
+        
+        # MAP to Delta
+        hand = [hand[1] - hand[0], hand[2] - hand[1], hand[3] - hand[2], hand[4] - hand[3], hand[5] - hand[4],
+                hand[7] - hand[6], hand[8] - hand[7], hand[9] - hand[8], hand[10] - hand[9], hand[11] - hand[10]]
+        
+        tool = [tool[1] - tool[0], tool[2] - tool[1], tool[3] - tool[2], tool[4] - tool[3], tool[5] - tool[4],
+                tool[7] - tool[6], tool[8] - tool[7], tool[9] - tool[8], tool[10] - tool[9], tool[11] - tool[10]]
+        
+        toy1 = [toy1[1] - toy1[0], toy1[2] - toy1[1], toy1[3] - toy1[2], toy1[4] - toy1[3], toy1[5] - toy1[4],
+                toy1[7] - toy1[6], toy1[8] - toy1[7], toy1[9] - toy1[8], toy1[10] - toy1[9], toy1[11] - toy1[10]]
+        
+        toy2 = [toy2[1] - toy2[0], toy2[2] - toy2[1], toy2[3] - toy2[2], toy2[4] - toy2[3], toy2[5] - toy2[4],
+                toy2[7] - toy2[6], toy2[8] - toy2[7], toy2[9] - toy2[8], toy2[10] - toy2[9], toy2[11] - toy2[10]]
+        
+        toy3 = [toy3[1] - toy3[0], toy3[2] - toy3[1], toy3[3] - toy3[2], toy3[4] - toy3[3], toy3[5] - toy3[4],
+                toy3[7] - toy3[6], toy3[8] - toy3[7], toy3[9] - toy3[8], toy3[10] - toy3[9], toy3[11] - toy3[10]]
+                
+        
         
         s = context + hand + tool + toy1 + toy2 + toy3 + sound + caregiver
         #print "s_sound", sound
