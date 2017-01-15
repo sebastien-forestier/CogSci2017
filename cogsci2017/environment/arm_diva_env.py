@@ -79,7 +79,7 @@ class CogSci2017Environment(Environment):
             self.human_sounds_traj_std[hs] = [d - 8.5 for d in self.human_sounds_traj[hs][:5]] + [d - 10.25 for d in self.human_sounds_traj[hs][5:]]    
     
             
-        self.sound_tol = 0.3
+        self.sound_tol = 0.4
     
 
         # DIVA CONFIG
