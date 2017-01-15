@@ -50,6 +50,7 @@ os.mkdir(log_dir + "/")
 os.mkdir(log_dir + "/" + "pbs")
 os.mkdir(log_dir + "/" + "img")
 os.mkdir(log_dir + "/" + "logs")
+os.mkdir(log_dir + "/" + "pickle")
 #os.mkdir(log_dir + "/" + "configs")
     
     

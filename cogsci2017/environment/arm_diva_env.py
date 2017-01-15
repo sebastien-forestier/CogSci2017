@@ -54,7 +54,7 @@ class CogSci2017Environment(Environment):
         
         self.vowels = dict(o=self.v_o, y=self.v_y, u=self.v_u, e=self.v_e, i=self.v_i)
         
-        self.human_sounds = ["uyi", "ieu", "euo", "oiy", "yeo", "uie"]
+        self.human_sounds = ['oey', 'uye', 'iuo', 'eyu', 'eou', 'yeo']
         random.shuffle(self.human_sounds)
         print "human sounds", self.human_sounds
         
@@ -79,7 +79,7 @@ class CogSci2017Environment(Environment):
             self.human_sounds_traj_std[hs] = [d - 8.5 for d in self.human_sounds_traj[hs][:5]] + [d - 10.25 for d in self.human_sounds_traj[hs][5:]]    
     
             
-        self.sound_tol = 0.5
+        self.sound_tol = 0.3
     
 
         # DIVA CONFIG

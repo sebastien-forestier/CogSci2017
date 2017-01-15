@@ -105,9 +105,6 @@ class LearningModule(Agent):
         self.sensorimotor_model.mode = mode
         m, sp = self.sensorimotor_model.infer(expl_dims, inf_dims, x.flatten())
         return m, sp
-    
-    def set_explo_noise(self, goal_error):
-        self.sm.model.imodel.fmodel.sigma_expl = 0.1 * goal_error
         
     def imitate_goal(self, imitate_sm, time_window=100, mode="uniform"):
         n = len(imitate_sm)

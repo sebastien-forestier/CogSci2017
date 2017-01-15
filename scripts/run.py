@@ -120,7 +120,7 @@ def run(log_dir, config_name, trial):
                social_tool_use=social_tool_use,)
     
     
-    filename = log_dir + '/log-{}-{}'.format(config_name, trial) + '.pickle'
+    filename = log_dir + '/pickle/log-{}-{}'.format(config_name, trial) + '.pickle'
     with open(filename, 'wb') as f:
         cPickle.dump(log, f)
     f.close()
