@@ -188,17 +188,13 @@ class CogSci2017Environment(Environment):
     def reset(self):
         
         if self.t % 20 == 0: 
-            self.current_toy1[:2] = self.reset_rand2d(region=0)
-            self.current_toy2[:2] = self.reset_rand2d(region=0)
-            self.current_toy3[:2] = self.reset_rand2d(region=0)
-        
+            self.reset_toys()
         
         self.current_tool[3] = 0.
         self.current_toy1[2] = 0.
         self.current_toy2[2] = 0.
         self.current_toy3[2] = 0.
-        self.current_caregiver = self.reset_rand2d()
-        
+        self.reset_caregiver()
         self.current_context = self.get_current_context()  
         
         self.hand = []
@@ -217,6 +213,14 @@ class CogSci2017Environment(Environment):
         self.logs_toy3 = []
         self.logs_caregiver = []
         
+    def reset_toys(self):
+        self.current_toy1[:2] = self.reset_rand2d(region=0)
+        self.current_toy2[:2] = self.reset_rand2d(region=0)
+        self.current_toy3[:2] = self.reset_rand2d(region=0)
+        
+    def reset_caregiver(self):
+        self.current_caregiver = self.reset_rand2d()
+                
     def reset_rand2d(self, region=None):
         if region == 0:
             rdm = np.random.random()

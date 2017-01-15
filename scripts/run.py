@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import cPickle
+import numpy as np
 
 sys.path.append('../')
 
@@ -120,13 +121,78 @@ def run(log_dir, config_name, trial):
                            count_social_tool_3=count_social_tool_3,
                            count_social_tool_3_unmatched=count_social_tool_3_unmatched)
     
+    
+    
     # ANALYSE COMPETENCE ERROR
-    # TODO
+    n_goals = 1000
+    
+    eval_results = {}
+    
+    for region in [1, 2, 3]:        
+        eval_results[region] = {}
+        for i in range(n_goals):
+            eval_results[region][i] = {}
+            environment.reset_toys()
+            for toy in ["toy1", "toy2", "toy3"]:
+                eval_results[region][i][toy] = {}
+                                        
+                if toy == "toy1":
+                    goal = [environment.current_toy1[0] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]] + \
+                           [environment.current_toy1[1] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]]
+                    arm_mid = "mod3"
+                    diva_mid = "mod10"
+                elif toy == "toy2":
+                    goal = [environment.current_toy2[0] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]] + \
+                           [environment.current_toy2[1] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]]
+                    arm_mid = "mod4"
+                    diva_mid = "mod11"
+                elif toy == "toy3":
+                    goal = [environment.current_toy3[0] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]] + \
+                           [environment.current_toy3[1] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]]
+                    arm_mid = "mod5"
+                    diva_mid = "mod12"
+                    
+                context = list(agent.modules[arm_mid].get_c(environment.get_current_context()))
+                dists, _ = agent.modules[arm_mid].sm.model.imodel.fmodel.dataset.nn_y(context+goal)
+                arm_dist = dists[0]
+                
+                if len(agent.modules[diva_mid].sm.model.imodel.fmodel.dataset) > 0:
+                    context = list(agent.modules[diva_mid].get_c(environment.get_current_context()))
+                    dists, _ = agent.modules[diva_mid].sm.model.imodel.fmodel.dataset.nn_y(context+goal)
+                    diva_dist = dists[0]
+                else:
+                    diva_dist = np.inf
+                
+                if arm_dist < diva_dist:
+                    m = agent.modules[arm_mid].inverse(np.array(context + goal), explore=False)            
+                    m = list(m) + [0.]*28
+                else:
+                    m = agent.modules[diva_mid].inverse(np.array(context + goal), explore=False)            
+                    m = [0.]*21 + list(m)
+                    
+                s = environment.update(m)
+                
+                if toy == "toy1":
+                    reached = s[30:40]
+                elif toy == "toy2":
+                    reached = s[40:50]
+                elif toy == "toy3":
+                    reached = s[50:60]
+                    
+                comp_error = np.linalg.norm(np.array(reached) - np.array(goal))
+                
+                eval_results[region][i][toy]["comp_error"] = comp_error
+                eval_results[region][i][toy]["arm_dist"] = arm_dist
+                eval_results[region][i][toy]["diva_dist"] = diva_dist
+        
+        
+    #print eval_results
     
     
     # DUMP LOG
     log = dict(environment=environment.save(),
                agent=agent.save(),
+               eval_results=eval_results,
                social_tool_use=social_tool_use,)
     
     
