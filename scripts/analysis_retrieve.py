@@ -23,6 +23,7 @@ for config_name in config_list:
         filename = log_dir + '/pickle/log-{}-{}'.format(config_name, trial) + '.pickle'
         with open(filename, 'r') as f:
             log = cPickle.load(f)
+        f.close()
         data_vocal_errors[config_name][trial] = log["environment"]["best_vocal_errors_evolution"]
         
 
@@ -32,6 +33,7 @@ if not os.path.exists(log_dir + "/results"):
     
 filename = log_dir + '/results/vocal.pickle'
 with open(filename, 'wb') as f:
-    cPickle.dump(log, f)
+    cPickle.dump(data_vocal_errors, f)
 f.close()
             
+print data_vocal_errors
