@@ -33,6 +33,7 @@ class LearningModule(Agent):
         self.s = None
         self.sp = None
         self.last_interest = 0
+        self.goal_dict = {}
         
         if context_mode is not None:
             im_cls, kwargs = (ContextRandomInterest, {
@@ -105,19 +106,23 @@ class LearningModule(Agent):
         self.sensorimotor_model.mode = mode
         m, sp = self.sensorimotor_model.infer(expl_dims, inf_dims, x.flatten())
         return m, sp
-        
-    def imitate_goal(self, imitate_sm, time_window=100, mode="uniform"):
+    
+    def update_imitation_goals(self, imitate_sm, time_window=100):
         n = len(imitate_sm)
-        #print "n", n, imitate_sm.buffer.data
         if n > 0:
             goals = [imitate_sm.get_y(idx)[8:] for idx in range(max(0, n - time_window), n)] # [8:] depend on mod6 context_n_dims
             #print "imitate", goals
+            for goal in goals:
+                self.goal_dict[goal.tostring()] = goal
+        
+    def imitate_goal(self, imitate_sm, mode="uniform"):
+        self.update_imitation_goals(imitate_sm)
+        if len(imitate_sm) > 0:
             if mode == "uniform":
-                goal_dict = {goal.tostring(): goal for goal in goals} # Find unique goals
-                goal = np.array(goal_dict.values()[np.random.choice(range(len(goal_dict)))])
+                goal = np.array(self.goal_dict.values()[np.random.choice(range(len(self.goal_dict)))])
                 return goal
             elif mode == "proportional":
-                return np.array(np.random.choice(goals))
+                return np.array(np.random.choice(self.goal_dict.values()))
         else:
             return np.zeros(len(self.expl_dims))
             

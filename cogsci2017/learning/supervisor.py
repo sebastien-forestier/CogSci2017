@@ -203,7 +203,10 @@ class Supervisor(object):
         
         for mid in self.modules.keys():
             self.cp_evolution[mid].append(self.modules[mid].interest_model.current_competence_progress)
-            self.pp_evolution[mid].append(self.modules[mid].interest_model.current_prediction_progress)            
+            self.pp_evolution[mid].append(self.modules[mid].interest_model.current_prediction_progress)           
+            
+        if self.t % 1000 == 0:
+            self.print_stats() 
         
     def print_stats(self):
         print "\n----------------\nAgent Statistics\n----------------\n"
