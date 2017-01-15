@@ -14,7 +14,15 @@ n_iter = 10
     
 filename = log_dir + '/results/vocal.pickle'
 with open(filename, 'r') as f:
-    data_vocal_errors = cPickle.load(f)
+    data_vocal = cPickle.load(f)
 
 
-            
+
+trial_list = range(1,n_iter + 1) 
+
+sound_tol = 0.5
+
+for config_name in config_list:
+    for trial in trial_list:
+        
+        data_vocal[config_name][trial]
