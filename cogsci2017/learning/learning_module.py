@@ -144,8 +144,8 @@ class LearningModule(Agent):
     def s_moved(self, s):
         ncdims = self.context_mode['context_n_dims'] if self.context_mode else 0
         s_x = np.array(s[ncdims:ncdims + 5])
-        s_y = np.array(s[ncdims + 5:])
-        return np.linalg.norm(s_x - s_x.mean()) > 0 or np.linalg.norm(s_y - s_y.mean()) > 0        
+        s_y = np.array(s[ncdims + 5:])      
+        return np.linalg.norm(s_x - s_x.mean()) + np.linalg.norm(s_y - s_y.mean()) > 0.001        
     
     def update_sm(self, m, s): 
         if self.s_moved(s):
