@@ -10,7 +10,7 @@ import numpy as np
 
 
 # CONFIGS
-config_list = ["RMB"]
+config_list = ["RMB", "AMB"]
 
 n_iter = 100
 
