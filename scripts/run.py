@@ -20,7 +20,7 @@ def run(log_dir, config_name, trial):
     # PARAMS
     if config_name == "RMB":
         
-        iterations = 20000
+        iterations = 50000
         model_babbling = "random"
         n_motor_babbling = 1000
         explo_noise = 0.05
@@ -30,7 +30,7 @@ def run(log_dir, config_name, trial):
         
     elif config_name == "AMB":
         
-        iterations = 20000
+        iterations = 50000
         model_babbling = "active"
         n_motor_babbling = 1000
         explo_noise = 0.05
