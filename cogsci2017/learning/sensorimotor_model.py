@@ -10,7 +10,7 @@ from explauto.utils import rand_bounds
 class DemonstrableNN(NonParametric):
     def __init__(self, conf, sigma_explo_ratio=0.1, fwd='LWLR', inv='L-BFGS-B', **learner_kwargs):
         self.demonstrated = []
-        NonParametric.__init__(self, conf, sigma_explo_ratio, fwd, inv, **learner_kwargs)
+        NonParametric.__init__(self, conf, sigma_explo_ratio, fwd, inv, **learner_kwargs)        
         
     def save(self):
         return [[self.model.imodel.fmodel.dataset.get_x(i) for i in range(len(self.model.imodel.fmodel.dataset))],

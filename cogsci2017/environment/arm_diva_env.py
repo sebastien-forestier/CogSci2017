@@ -54,7 +54,7 @@ class CogSci2017Environment(Environment):
         
         self.vowels = dict(o=self.v_o, y=self.v_y, u=self.v_u, e=self.v_e, i=self.v_i)
         
-        self.human_sounds = ["uyi", "ieu", "euo", "oiy", "oey", "uie"]
+        self.human_sounds = ["uyi", "ieu", "euo", "oiy", "yeo", "uie"]
         random.shuffle(self.human_sounds)
         print "human sounds", self.human_sounds
         
