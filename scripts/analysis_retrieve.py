@@ -6,9 +6,9 @@ import numpy as np
 
 
 # PARAMS
-log_dir = "/scratch/sforestier001/logs/CogSci2017/2017-01-15_14-13-31-TEST"
+log_dir = "/scratch/sforestier001/logs/CogSci2017/2017-01-15_18-30-39-TEST100"
 config_list = ["RMB"]
-n_iter = 10
+n_iter = 100
 
 
 
