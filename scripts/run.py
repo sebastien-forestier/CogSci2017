@@ -20,21 +20,21 @@ def run(log_dir, config_name, trial):
     # PARAMS
     if config_name == "RMB":
         
-        iterations = 50000
+        iterations = 100000
         model_babbling = "random"
         n_motor_babbling = 1000
         explo_noise = 0.05
-        proba_imitate = 0.5
+        proba_imitate = 0.2
         gui=False
         audio=False
         
     elif config_name == "AMB":
         
-        iterations = 50000
+        iterations = 100000
         model_babbling = "active"
         n_motor_babbling = 1000
         explo_noise = 0.05
-        proba_imitate = 0.5
+        proba_imitate = 0.2
         gui=False
         audio=False
         
@@ -137,18 +137,18 @@ def run(log_dir, config_name, trial):
                 eval_results[region][i][toy] = {}
                                         
                 if toy == "toy1":
-                    goal = [environment.current_toy1[0] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]] + \
-                           [environment.current_toy1[1] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]]
+                    goal = [environment.current_toy1[0] * (1. - t) / 2. for t in [0., 0.3, 0.5, 0.8, 1.]] + \
+                           [environment.current_toy1[1] * (1. - t) / 2. for t in [0., 0.3, 0.5, 0.8, 1.]]
                     arm_mid = "mod3"
                     diva_mid = "mod10"
                 elif toy == "toy2":
-                    goal = [environment.current_toy2[0] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]] + \
-                           [environment.current_toy2[1] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]]
+                    goal = [environment.current_toy2[0] * (1. - t) / 2. for t in [0., 0.3, 0.5, 0.8, 1.]] + \
+                           [environment.current_toy2[1] * (1. - t) / 2. for t in [0., 0.3, 0.5, 0.8, 1.]]
                     arm_mid = "mod4"
                     diva_mid = "mod11"
                 elif toy == "toy3":
-                    goal = [environment.current_toy3[0] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]] + \
-                           [environment.current_toy3[1] * (1. - t) for t in [0., 0.3, 0.5, 0.8, 1.]]
+                    goal = [environment.current_toy3[0] * (1. - t) / 2. for t in [0., 0.3, 0.5, 0.8, 1.]] + \
+                           [environment.current_toy3[1] * (1. - t) / 2. for t in [0., 0.3, 0.5, 0.8, 1.]]
                     arm_mid = "mod5"
                     diva_mid = "mod12"
                     

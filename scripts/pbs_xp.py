@@ -12,7 +12,7 @@ import numpy as np
 # CONFIGS
 config_list = ["RMB", "AMB"]
 
-n_iter = 100
+n_trial = 1000
 
 
 path = '/home/sforestier/software/CogSci2017/scripts/'
@@ -24,7 +24,7 @@ def write_pbs(config_name, trial, log_dir):
     pbs =   """
 #!/bin/sh
 
-#PBS -l walltime=02:00:00
+#PBS -l walltime=05:00:00
 #PBS -l nodes=1:ppn=2
 #PBS -N {}-{}
 #PBS -o {}logs/log-{}-{}.output
@@ -43,7 +43,7 @@ log_dir = '/scratch/sforestier001/logs/CogSci2017/' + start_date + '-' + pool_na
 
 
 
-trial_list = range(1,n_iter + 1) 
+trial_list = range(1,n_trial + 1) 
 
 
 os.mkdir(log_dir + "/")

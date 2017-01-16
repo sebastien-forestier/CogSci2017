@@ -506,8 +506,9 @@ class CogSci2017Environment(Environment):
             print "best_vocal_errors", [(hs,self.best_vocal_errors[hs]) for hs in self.human_sounds]
         
         
+        context = self.current_context
+        
         # MAP TO STD INTERVAL
-        context = [d/2 for d in self.current_context]
         hand = [d/2 for d in self.hand]
         tool = [d/2 for d in self.tool]
         toy1 = [d/2 for d in self.toy1]
@@ -537,7 +538,31 @@ class CogSci2017Environment(Environment):
         s = context + hand + tool + toy1 + toy2 + toy3 + sound + caregiver
         #print "s_sound", sound
         return bounds_min_max(s, self.conf.s_mins, self.conf.s_maxs)
+    
+    
+    def update(self, m_ag, reset=True, log=True):
+        """ Computes sensorimotor values from motor orders.
 
+        :param numpy.array m_ag: a motor command with shape (self.conf.m_ndims, ) or a set of n motor commands of shape (n, self.conf.m_ndims)
+
+        :param bool log: emit the motor and sensory values for logging purpose (default: True).
+
+        :returns: an array of shape (self.conf.ndims, ) or (n, self.conf.ndims) according to the shape of the m_ag parameter, containing the motor values (which can be different from m_ag, e.g. bounded according to self.conf.m_bounds) and the corresponding sensory values.
+
+        .. note:: self.conf.ndims = self.conf.m_ndims + self.conf.s_ndims is the dimensionality of the sensorimotor space (dim of the motor space + dim of the sensory space).
+        """
+
+        if len(np.array(m_ag).shape) == 1:
+            s = self.one_update(m_ag, log)
+        else:
+            s = []
+            for m in m_ag:
+                s.append(self.one_update(m, log))
+            s = np.array(s)
+        if reset:
+            self.reset()
+        return s
+    
 
     def print_stats(self):
         print"\n----------------------\nEnvironment Statistics\n----------------------\n"
