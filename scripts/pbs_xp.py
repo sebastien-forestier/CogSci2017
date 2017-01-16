@@ -25,7 +25,7 @@ def write_pbs(config_name, trial, log_dir):
 #!/bin/sh
 
 #PBS -l walltime=02:00:00
-#PBS -l nodes=1:ppn=1
+#PBS -l nodes=1:ppn=2
 #PBS -N {}-{}
 #PBS -o {}logs/log-{}-{}.output
 #PBS -e {}logs/log-{}-{}.error
