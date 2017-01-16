@@ -31,7 +31,7 @@ for config_name in config_list:
         
         # VOCAL
         data_vocal[config_name][trial]["errors"] = log["environment"]["best_vocal_errors_evolution"][::10]
-        data_vocal[config_name][trial]["human_sounds"] = log["environment"]["human_sounds"][::10]
+        data_vocal[config_name][trial]["human_sounds"] = log["environment"]["human_sounds"]
         
         # COMPETENCE
         data_competence[config_name][trial]["eval_results"] = log["eval_results"]
