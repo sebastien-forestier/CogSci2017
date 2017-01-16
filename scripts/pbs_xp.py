@@ -12,7 +12,7 @@ import numpy as np
 # CONFIGS
 config_list = ["RMB", "AMB"]
 
-n_iter = 1000
+n_iter = 100
 
 
 path = '/home/sforestier/software/CogSci2017/scripts/'

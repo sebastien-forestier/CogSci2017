@@ -21,6 +21,7 @@ for config_name in config_list:
     data_vocal[config_name] = {}
     data_competence[config_name] = {}
     for trial in trial_list:
+        print "Retrieve trial", trial
         data_vocal[config_name][trial] = {}
         data_competence[config_name][trial] = {}
         filename = log_dir + '/pickle/log-{}-{}'.format(config_name, trial) + '.pickle'

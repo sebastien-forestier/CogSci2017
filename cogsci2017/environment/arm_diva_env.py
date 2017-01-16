@@ -247,7 +247,7 @@ class CogSci2017Environment(Environment):
         
         
     def get_current_context(self):
-        return self.current_tool[:2] + self.current_toy1[:2] + self.current_toy2[:2] + self.current_toy3[:2] + self.current_caregiver
+        return [d / 2. for d in self.current_tool[:2] + self.current_toy1[:2] + self.current_toy2[:2] + self.current_toy3[:2] + self.current_caregiver]
     
     def compute_tool(self):
         a = np.pi * self.current_tool[2]
