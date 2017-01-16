@@ -30,8 +30,8 @@ for config_name in config_list:
         f.close()
         
         # VOCAL
-        data_vocal[config_name][trial]["errors"] = log["environment"]["best_vocal_errors_evolution"]
-        data_vocal[config_name][trial]["human_sounds"] = log["environment"]["human_sounds"]
+        data_vocal[config_name][trial]["errors"] = log["environment"]["best_vocal_errors_evolution"][::10]
+        data_vocal[config_name][trial]["human_sounds"] = log["environment"]["human_sounds"][::10]
         
         # COMPETENCE
         data_competence[config_name][trial]["eval_results"] = log["eval_results"]
