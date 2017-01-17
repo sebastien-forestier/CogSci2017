@@ -24,7 +24,7 @@ def run(log_dir, config_name, trial):
         model_babbling = "random"
         n_motor_babbling = 1000
         explo_noise = 0.05
-        proba_imitate = 0.2
+        proba_imitate = 0.5
         gui=False
         audio=False
         
@@ -34,7 +34,7 @@ def run(log_dir, config_name, trial):
         model_babbling = "active"
         n_motor_babbling = 1000
         explo_noise = 0.05
-        proba_imitate = 0.2
+        proba_imitate = 0.5
         gui=False
         audio=False
         
