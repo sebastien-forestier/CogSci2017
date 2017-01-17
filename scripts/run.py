@@ -183,6 +183,7 @@ def run(log_dir, config_name, trial):
                 
                 eval_results[region][i][toy]["goal"] = goal
                 eval_results[region][i][toy]["reached"] = reached
+                eval_results[region][i][toy]["tool"] = s[20:30]
                 eval_results[region][i][toy]["comp_error"] = comp_error
                 eval_results[region][i][toy]["arm_dist"] = arm_dist
                 eval_results[region][i][toy]["diva_dist"] = diva_dist
