@@ -116,9 +116,9 @@ class CogSci2017Environment(Environment):
         self.handle_tol = 0.2
         self.handle_tol_sq = self.handle_tol * self.handle_tol
         self.handle_noise = 0.
-        self.object_tol_hand = 0.1
+        self.object_tol_hand = 0.2
         self.object_tol_hand_sq = self.object_tol_hand * self.object_tol_hand
-        self.object_tol_tool = 0.1
+        self.object_tol_tool = 0.2
         self.object_tol_tool_sq = self.object_tol_tool * self.object_tol_tool
         
         self.diva_traj = None
