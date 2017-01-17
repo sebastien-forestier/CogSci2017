@@ -181,6 +181,7 @@ def run(log_dir, config_name, trial):
                     
                 comp_error = np.linalg.norm(np.array(reached) - np.array(goal))
                 
+                eval_results[region][i][toy]["goal"] = goal
                 eval_results[region][i][toy]["comp_error"] = comp_error
                 eval_results[region][i][toy]["arm_dist"] = arm_dist
                 eval_results[region][i][toy]["diva_dist"] = diva_dist
