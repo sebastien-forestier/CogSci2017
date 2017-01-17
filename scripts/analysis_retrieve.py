@@ -7,8 +7,8 @@ import numpy as np
 
 # PARAMS
 log_dir = "/scratch/sforestier001/logs/CogSci2017/2017-01-16_21-05-23-COGSCI"
-config_list = ["RMB"]
-n_iter = 100
+config_list = ["RMB", "AMB"]
+n_iter = 10
 
 
 
