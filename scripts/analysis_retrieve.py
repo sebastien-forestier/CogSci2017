@@ -25,17 +25,19 @@ for config_name in config_list:
         data_vocal[config_name][trial] = {}
         data_competence[config_name][trial] = {}
         filename = log_dir + '/pickle/log-{}-{}'.format(config_name, trial) + '.pickle'
-        with open(filename, 'r') as f:
-            log = cPickle.load(f)
-        f.close()
-        
-        # VOCAL
-        data_vocal[config_name][trial]["errors"] = log["environment"]["best_vocal_errors_evolution"][::10]
-        data_vocal[config_name][trial]["human_sounds"] = log["environment"]["human_sounds"]
-        
-        # COMPETENCE
-        data_competence[config_name][trial]["eval_results"] = log["eval_results"]
-        
+        try:
+            with open(filename, 'r') as f:
+                log = cPickle.load(f)
+            f.close()
+            
+            # VOCAL
+            data_vocal[config_name][trial]["errors"] = log["environment"]["best_vocal_errors_evolution"][::10]
+            data_vocal[config_name][trial]["human_sounds"] = log["environment"]["human_sounds"]
+            
+            # COMPETENCE
+            data_competence[config_name][trial]["eval_results"] = log["eval_results"]
+        except IOError:
+            print "Trial ", trial, "Not Found"
         
 # DUMP RESULT
 if not os.path.exists(log_dir + "/results"):
