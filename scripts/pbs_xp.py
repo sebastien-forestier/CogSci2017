@@ -12,7 +12,7 @@ import numpy as np
 # CONFIGS
 config_list = ["RMB", "AMB"]
 
-n_trial = 100
+n_trial = 1000
 
 
 path = '/home/sforestier/software/CogSci2017/scripts/'

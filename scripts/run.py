@@ -124,7 +124,7 @@ def run(log_dir, config_name, trial):
     
     
     # ANALYSE COMPETENCE ERROR
-    n_goals = 1000
+    n_goals = 100
     
     eval_results = {}
     
@@ -181,9 +181,9 @@ def run(log_dir, config_name, trial):
                     
                 comp_error = np.linalg.norm(np.array(reached) - np.array(goal))
                 
-                eval_results[region][i][toy]["goal"] = goal
-                eval_results[region][i][toy]["reached"] = reached
-                eval_results[region][i][toy]["tool"] = s[20:30]
+                eval_results[region][i][toy]["toy_pos"] = [goal[0], goal[5]]
+                eval_results[region][i][toy]["reached"] = not (reached[0] - reached[4]) == 0 
+                eval_results[region][i][toy]["tool"] = not (s[20] - s[24]) == 0 
                 eval_results[region][i][toy]["comp_error"] = comp_error
                 eval_results[region][i][toy]["arm_dist"] = arm_dist
                 eval_results[region][i][toy]["diva_dist"] = diva_dist
