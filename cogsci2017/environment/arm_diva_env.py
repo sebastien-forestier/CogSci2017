@@ -501,7 +501,8 @@ class CogSci2017Environment(Environment):
         #print "s_caregiver", len(self.caregiver), self.caregiver
         
         self.t += 1
-        self.best_vocal_errors_evolution += [self.best_vocal_errors.copy()]
+        if self. t % 100 == 0:
+            self.best_vocal_errors_evolution += [self.best_vocal_errors.copy()]
         if self.t % 1000 == 0:
             print "best_vocal_errors", [(hs,self.best_vocal_errors[hs]) for hs in self.human_sounds]
         

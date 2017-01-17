@@ -95,8 +95,9 @@ class Supervisor(object):
         for mid in self.modules.keys():
             sm_data[mid] = self.modules[mid].sensorimotor_model.save()
             im_data[mid] = self.modules[mid].interest_model.save()            
-        return {"sm_data":sm_data,
-                "im_data":im_data,
+        return {
+                #"sm_data":sm_data,
+                #"im_data":im_data,
                 "chosen_modules":self.chosen_modules,
                 "cp_evolution":self.cp_evolution,
                 "pp_evolution":self.pp_evolution,}
@@ -201,9 +202,10 @@ class Supervisor(object):
             self.modules[self.mid_control].update_im(self.modules[self.mid_control].get_m(ms), self.modules[self.mid_control].get_s(ms))
         self.t = self.t + 1
         
-        for mid in self.modules.keys():
-            self.cp_evolution[mid].append(self.modules[mid].interest_model.current_competence_progress)
-            self.pp_evolution[mid].append(self.modules[mid].interest_model.current_prediction_progress)           
+        if self.t % 100 == 0:
+            for mid in self.modules.keys():
+                self.cp_evolution[mid].append(self.modules[mid].interest_model.current_competence_progress)
+                self.pp_evolution[mid].append(self.modules[mid].interest_model.current_prediction_progress)           
             
         if self.t % 1000 == 0:
             self.print_stats() 
