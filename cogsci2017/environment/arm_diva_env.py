@@ -213,10 +213,10 @@ class CogSci2017Environment(Environment):
         self.logs_toy3 = []
         self.logs_caregiver = []
         
-    def reset_toys(self):
-        self.current_toy1[:2] = self.reset_rand2d(region=0)
-        self.current_toy2[:2] = self.reset_rand2d(region=0)
-        self.current_toy3[:2] = self.reset_rand2d(region=0)
+    def reset_toys(self, region=0):
+        self.current_toy1[:2] = self.reset_rand2d(region=region)
+        self.current_toy2[:2] = self.reset_rand2d(region=region)
+        self.current_toy3[:2] = self.reset_rand2d(region=region)
         
     def reset_caregiver(self):
         self.current_caregiver = self.reset_rand2d()

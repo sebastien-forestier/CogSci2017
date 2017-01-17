@@ -132,7 +132,7 @@ def run(log_dir, config_name, trial):
         eval_results[region] = {}
         for i in range(n_goals):
             eval_results[region][i] = {}
-            environment.reset_toys()
+            environment.reset_toys(region=region)
             for toy in ["toy1", "toy2", "toy3"]:
                 eval_results[region][i][toy] = {}
                                         
