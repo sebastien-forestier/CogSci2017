@@ -23,7 +23,7 @@ def run(log_dir, config_name, trial):
         iterations = 80000
         model_babbling = "random"
         n_motor_babbling = 1000
-        explo_noise = 0.02
+        explo_noise = 0.1
         proba_imitate = 0.5
         gui=False
         audio=False
@@ -33,7 +33,7 @@ def run(log_dir, config_name, trial):
         iterations = 80000
         model_babbling = "active"
         n_motor_babbling = 1000
-        explo_noise = 0.02
+        explo_noise = 0.1
         proba_imitate = 0.5
         gui=False
         audio=False
