@@ -41,7 +41,14 @@ for config_name in config_list:
             data_competence[config_name][trial]["eval_results"] = log["eval_results"]
             
             # PROGRESS
-            data_progress[config_name][trial] = log["agent"]
+            data_progress[config_name][trial]["chosen_modules"] = log["agent"]["chosen_modules"]
+            data_progress[config_name][trial]["cp_evolution"] = {}
+            for mid in log["agent"]["cp_evolution"].keys():
+                data_progress[config_name][trial]["cp_evolution"][mid] = log["agent"]["cp_evolution"][mid][::10]
+            data_progress[config_name][trial]["pp_evolution"] = {}
+            for mid in log["agent"]["pp_evolution"].keys():
+                data_progress[config_name][trial]["pp_evolution"][mid] = log["agent"]["pp_evolution"][mid][::10]
+                                      
             
         except IOError:
             print "Trial ", trial, "Not Found"
