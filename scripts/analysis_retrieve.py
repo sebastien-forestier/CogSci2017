@@ -44,10 +44,10 @@ for config_name in config_list:
             data_progress[config_name][trial]["chosen_modules"] = {mid: log["agent"]["chosen_modules"].count(mid) for mid in log["agent"]["pp_evolution"].keys()}
             data_progress[config_name][trial]["cp_evolution"] = {}
             for mid in log["agent"]["cp_evolution"].keys():
-                data_progress[config_name][trial]["cp_evolution"][mid] = log["agent"]["cp_evolution"][mid][::100]
+                data_progress[config_name][trial]["cp_evolution"][mid] = log["agent"]["cp_evolution"][mid]
             data_progress[config_name][trial]["pp_evolution"] = {}
             for mid in log["agent"]["pp_evolution"].keys():
-                data_progress[config_name][trial]["pp_evolution"][mid] = log["agent"]["pp_evolution"][mid][::100]
+                data_progress[config_name][trial]["pp_evolution"][mid] = log["agent"]["pp_evolution"][mid]
                                       
             
         except IOError:
