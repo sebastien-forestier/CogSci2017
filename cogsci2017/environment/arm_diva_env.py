@@ -139,6 +139,8 @@ class CogSci2017Environment(Environment):
         self.reset()
         self.compute_tool()
         
+        self.purge_logs()
+        
         if self.arm.gui:
             self.init_plot()
             
@@ -204,7 +206,6 @@ class CogSci2017Environment(Environment):
         self.toy3 = []
         self.caregiver = []
         
-        self.purge_logs()
         
     def purge_logs(self):
         self.logs_tool = []
@@ -215,14 +216,29 @@ class CogSci2017Environment(Environment):
             
     def reset_tool(self):
         self.current_tool[:2] = self.reset_rand2d(region=1)
+        self.current_tool[2] = np.random.random()
+        self.compute_tool()
+        
+    def set_tool(self, pos, angle):
+        self.current_tool[:2] = pos
+        self.current_tool[2] = angle
+        self.compute_tool()
         
     def reset_toys(self, region=0):
         self.current_toy1[:2] = self.reset_rand2d(region=region)
         self.current_toy2[:2] = self.reset_rand2d(region=region)
         self.current_toy3[:2] = self.reset_rand2d(region=region)
         
+    def set_toys(self, pos1, pos2, pos3):
+        self.current_toy1[:2] = pos1
+        self.current_toy2[:2] = pos2
+        self.current_toy3[:2] = pos3
+        
     def reset_caregiver(self):
         self.current_caregiver = self.reset_rand2d()
+        
+    def set_caregiver(self, pos):
+        self.current_caregiver = pos
                 
     def reset_rand2d(self, region=None):
         if region == 0:
@@ -326,6 +342,8 @@ class CogSci2017Environment(Environment):
             cmd = "arm"
         else:
             cmd = "diva"
+            
+        self.purge_logs()
         
         arm_traj = self.arm.update(m_arm)
         #print "arm traj", arm_traj
@@ -622,11 +640,12 @@ class CogSci2017Environment(Environment):
         rectangle = plt.Rectangle((pos[0] - 0.1, pos[1] - 0.1), 0.2, 0.2, color = "black", **kwargs_plot)
         ax.add_patch(rectangle) 
         
-    def plot_step(self, ax, i, **kwargs_plot):
+    def plot_step(self, ax, i, clean=True, **kwargs_plot):
         #t0 = time.time()
         plt.pause(0.0001)
         #print "t1", time.time() - t0
-        plt.cla()
+        if clean:
+            plt.cla()
         #print "t2", time.time() - t0
         self.arm.plot_step(ax, i, **kwargs_plot)
         self.plot_tool_step(ax, i, **kwargs_plot)
@@ -635,14 +654,17 @@ class CogSci2017Environment(Environment):
         self.plot_toy3_step(ax, i, **kwargs_plot)
         self.plot_caregiver_step(ax, i, **kwargs_plot)
         #print "t3", time.time() - t0
-        plt.xlim([-2, 2])
-        plt.ylim([-2, 2])
-        plt.gca().set_xticklabels([])
-        plt.gca().set_yticklabels([])
-        plt.gca().xaxis.set_major_locator(plt.NullLocator())
-        plt.gca().yaxis.set_major_locator(plt.NullLocator())
-        plt.xlabel("")
-        plt.ylabel("")
+        
+        if clean:
+            plt.xlim([-2, 2])
+            plt.ylim([-2, 2])
+            plt.gca().set_xticklabels([])
+            plt.gca().set_yticklabels([])
+            plt.gca().xaxis.set_major_locator(plt.NullLocator())
+            plt.gca().yaxis.set_major_locator(plt.NullLocator())
+            plt.xlabel("")
+            plt.ylabel("")
+            
         plt.draw()
         plt.show(block=False)
     
