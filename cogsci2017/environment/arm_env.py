@@ -58,9 +58,9 @@ class ArmEnvironment(Environment):
         x, y = joint_positions(angles, self.lengths, 'std')
         x, y = [np.hstack((0., a)) for a in x, y]
         ax.plot(x, y, 'grey', lw=4, **kwargs_plot)
-        ax.plot(x[0], y[0], 'o', color='grey', ms=12, **kwargs_plot)
+        ax.plot(x[0], y[0], 'o', color='grey', ms=10, **kwargs_plot)
         for j in range(len(self.lengths)-1):
-            ax.plot(x[j+1], y[j+1], 'o', color='grey', ms=12, **kwargs_plot)
-        ax.plot(x[-1], y[-1], 'o', color='grey', ms=12, **kwargs_plot)
+            ax.plot(x[j+1], y[j+1], 'o', color='grey', ms=10, **kwargs_plot)
+        ax.plot(x[-1], y[-1], 'o', color='r', ms=14, markerfacecolor='white', markeredgewidth=4, markeredgecolor="r", **kwargs_plot)
         #ax.axis([-1.6, 2.1, -1., 2.1])        
 
