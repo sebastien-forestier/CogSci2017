@@ -151,14 +151,18 @@ class Supervisor(object):
         self.m = rand_bounds(self.conf.m_bounds)[0]
         if arm:
             r = 1.
+            self.last_cmd = "arm"
         elif audio:
             r = 0.
+            self.last_cmd = "diva"
         else:
             r = np.random.random()
         if r < 0.5:
             self.m[:self.arm_n_dims] = 0.
+            self.last_cmd = "diva"
         else:
             self.m[self.arm_n_dims:] = 0.
+            self.last_cmd = "arm"
         return self.m
     
     def set_ms(self, m, s): return np.array(list(m) + list(s))
